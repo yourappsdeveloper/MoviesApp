@@ -6,11 +6,13 @@
 //
 
 
+// Checks page metadata and the movies inside a paginated response.
 import Foundation
 import XCTest
 @testable import MovieCore
 
 final class PaginatedResponseTests: XCTestCase {
+    /// Checks that page numbers, totals, and nested movies decode correctly.
     func testDecodingMoviePage() throws {
         // Arrange
         let json = """

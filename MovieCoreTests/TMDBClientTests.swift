@@ -6,11 +6,13 @@
 //
 
 
+// Checks API response decoding and domain mapping without a network connection.
 import Foundation
 import XCTest
 @testable import MovieCore
 
 final class TMDBClientTests: XCTestCase {
+    /// Checks that the client turns a successful JSON response into domain movies.
     func testFetchTrendingMoviesReturnsDecodedMovies() async throws {
         let configuration = URLSessionConfiguration.ephemeral
         configuration.protocolClasses = [SuccessURLProtocol.self]
@@ -32,17 +34,21 @@ final class TMDBClientTests: XCTestCase {
     }
 }
 
+/// Supplies a fixed response only to sessions that register this helper.
 private final class SuccessURLProtocol: URLProtocol, @unchecked Sendable {
+    /// Handles every request made through this test session.
     override class func canInit(with request: URLRequest) -> Bool {
         true
     }
 
+    /// Leaves the intercepted request unchanged.
     override class func canonicalRequest(
         for request: URLRequest
     ) -> URLRequest {
         request
     }
 
+    /// Delivers a prepared HTTP 200 response and JSON to the session.
     override func startLoading() {
         guard let url = request.url,
               let response = HTTPURLResponse(
@@ -67,8 +73,10 @@ private final class SuccessURLProtocol: URLProtocol, @unchecked Sendable {
         client?.urlProtocolDidFinishLoading(self)
     }
 
+    /// Nothing to cancel: the response is delivered synchronously.
     override func stopLoading() {}
 
+    /// A small movie page used instead of a live TMDB response.
     private var responseData: Data {
         let json = """
         {
