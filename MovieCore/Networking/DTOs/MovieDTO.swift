@@ -8,7 +8,6 @@
 
 import Foundation
 
-// 
 struct MovieDTO: Decodable, Sendable {
     let id: Int
     let title: String
