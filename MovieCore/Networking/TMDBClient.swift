@@ -8,7 +8,7 @@
 
 import Foundation
 
-public struct TMDBClient: Sendable {
+public struct TMDBClient: TrendingMoviesProviding {
     private let token: String
     private let session: URLSession
 
