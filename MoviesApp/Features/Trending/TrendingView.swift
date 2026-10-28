@@ -55,22 +55,7 @@ struct TrendingView: View {
     }
 
     private func moviesList(_ movies: [Movie]) -> some View {
-        List(movies) { movie in
-            movieRow(movie)
-        }
-    }
-
-    private func movieRow(_ movie: Movie) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(movie.title)
-                .font(.headline)
-
-            Text(movie.overview)
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-                .lineLimit(3)
-        }
-        .padding(.vertical, 4)
+        MoviesCollectionView(movies: movies)
     }
 
     private func errorView(message: String) -> some View {
