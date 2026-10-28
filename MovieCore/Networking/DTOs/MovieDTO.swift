@@ -8,6 +8,7 @@
 
 import Foundation
 
+// 
 struct MovieDTO: Decodable, Sendable {
     let id: Int
     let title: String
@@ -19,5 +20,16 @@ struct MovieDTO: Decodable, Sendable {
         case title
         case overview
         case posterPath = "poster_path"
+    }
+}
+
+extension MovieDTO {
+    func toDomain() -> Movie {
+        Movie(
+            id: id,
+            title: title,
+            overview: overview,
+            posterPath: posterPath
+        )
     }
 }
