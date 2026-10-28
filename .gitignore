@@ -1,0 +1,9 @@
+# Personal Xcode settings and local schemes
+xcuserdata/
+
+# Local build output
+build/
+DerivedData/
+
+# macOS metadata
+.DS_Store
