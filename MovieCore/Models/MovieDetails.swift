@@ -5,7 +5,6 @@
 //  Created by Alex  on 29.10.2026.
 //
 
-
 public struct MovieDetails: Identifiable, Sendable {
     public let id: Int
     public let title: String

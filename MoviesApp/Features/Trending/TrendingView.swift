@@ -5,7 +5,6 @@
 //  Created by Alex  on 28.10.2026.
 //
 
-
 import SwiftUI
 import MovieCore
 
@@ -50,13 +49,14 @@ struct TrendingView: View {
             isPresented: $isSearchPresented,
             onDismiss: {
                 searchViewModel.cancelSearch()
+            },
+            content: {
+                MovieSearchView(
+                    viewModel: searchViewModel,
+                    movieDetailsProvider: movieDetailsProvider
+                )
             }
-        ) {
-            MovieSearchView(
-                viewModel: searchViewModel,
-                movieDetailsProvider: movieDetailsProvider
-            )
-        }
+        )
     }
 
     @ViewBuilder

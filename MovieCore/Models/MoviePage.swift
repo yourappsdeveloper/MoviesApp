@@ -5,7 +5,6 @@
 //  Created by Alex  on 29.10.2026.
 //
 
-
 /// A page of movies and the information needed to load the next one.
 public struct MoviePage: Sendable {
     public let page: Int

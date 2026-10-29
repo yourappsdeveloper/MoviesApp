@@ -5,7 +5,6 @@
 //  Created by Alex  on 28.10.2026.
 //
 
-
 struct PaginatedResponse<Item: Decodable & Sendable>: Decodable, Sendable {
     let page: Int
     let results: [Item]

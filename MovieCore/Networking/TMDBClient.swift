@@ -5,7 +5,6 @@
 //  Created by Alex  on 28.10.2026.
 //
 
-
 import Foundation
 
 public struct TMDBClient: TrendingMoviesProviding, MovieDetailsProviding, MovieSearchProviding {
@@ -133,9 +132,7 @@ public struct TMDBClient: TrendingMoviesProviding, MovieDetailsProviding, MovieS
         query: String,
         page: Int
     ) async throws -> MoviePage {
-        let trimmedQuery = query.trimmingCharacters(
-            in: .whitespacesAndNewlines
-        )
+        let trimmedQuery = query.trimmingCharacters(in: .whitespacesAndNewlines)
 
         guard !trimmedQuery.isEmpty else {
             throw TMDBError.emptySearchQuery

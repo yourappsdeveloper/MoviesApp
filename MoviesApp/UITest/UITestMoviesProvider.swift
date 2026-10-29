@@ -5,7 +5,6 @@
 //  Created by Alex  on 29.10.2026.
 //
 
-
 #if DEBUG
 import MovieCore
 import Foundation
@@ -14,8 +13,7 @@ import Foundation
 struct UITestMoviesProvider:
     TrendingMoviesProviding,
     MovieDetailsProviding,
-    MovieSearchProviding
-{
+    MovieSearchProviding {
     private let movie = Movie(
         id: 157336,
         title: "Interstellar",
