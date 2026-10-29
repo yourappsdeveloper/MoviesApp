@@ -6,14 +6,15 @@
 //
 
 #if DEBUG
-import MovieCore
 import Foundation
+import MovieCore
 
-// Supplies predictable movie data for UI tests.
+// Supplies predictable movie and series data for UI tests.
 struct UITestMoviesProvider:
     TrendingMoviesProviding,
     MovieDetailsProviding,
     MovieSearchProviding {
+
     private let movie = Movie(
         id: 157336,
         title: "Interstellar",
@@ -21,7 +22,14 @@ struct UITestMoviesProvider:
         posterPath: nil
     )
 
-    // Returns one trending movie with no additional pages.
+    private let series = Movie(
+        id: 1396,
+        title: "Breaking Bad",
+        overview: "A chemistry teacher starts a dangerous new life.",
+        posterPath: nil,
+        mediaType: .series
+    )
+
     func fetchTrendingMovies(page: Int) async throws -> MoviePage {
         try Task.checkCancellation()
 
@@ -32,27 +40,6 @@ struct UITestMoviesProvider:
         )
     }
 
-    // Returns details for the movie used by the navigation tests.
-    func fetchDetails(
-        id: Int,
-        mediaType: MediaType
-    ) async throws -> MovieDetails {
-        try Task.checkCancellation()
-
-        return MovieDetails(
-            id: movie.id,
-            title: movie.title,
-            overview: movie.overview,
-            posterPath: nil,
-            backdropPath: nil,
-            releaseDate: "2014-11-05",
-            runtime: 169,
-            voteAverage: 8.4,
-            voteCount: 35000
-        )
-    }
-
-    // Matches the sample movie against the entered title.
     func search(
         query: String,
         page: Int,
@@ -60,14 +47,43 @@ struct UITestMoviesProvider:
     ) async throws -> MoviePage {
         try Task.checkCancellation()
 
-        let matches = movie.title.localizedCaseInsensitiveContains(
-            query
-        )
+        let item = mediaType == .movie ? movie : series
+        let matches = item.title.localizedCaseInsensitiveContains(query)
 
         return MoviePage(
             page: page,
             totalPages: 1,
-            movies: page == 1 && matches ? [movie] : []
+            movies: page == 1 && matches ? [item] : []
+        )
+    }
+
+    func fetchDetails(
+        id: Int,
+        mediaType: MediaType
+    ) async throws -> MovieDetails {
+        try Task.checkCancellation()
+
+        let item = mediaType == .movie ? movie : series
+
+        guard id == item.id else {
+            throw TMDBError.invalidMovieID
+        }
+
+        return MovieDetails(
+            id: item.id,
+            title: item.title,
+            overview: item.overview,
+            posterPath: nil,
+            backdropPath: nil,
+            releaseDate: mediaType == .movie
+                ? "2014-11-05"
+                : "2008-01-20",
+            runtime: mediaType == .movie ? 169 : 47,
+            voteAverage: 8.4,
+            voteCount: 35000,
+            mediaType: mediaType,
+            numberOfSeasons: mediaType == .series ? 5 : nil,
+            numberOfEpisodes: mediaType == .series ? 62 : nil
         )
     }
 }

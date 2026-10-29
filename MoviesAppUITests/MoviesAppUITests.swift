@@ -74,7 +74,7 @@ final class MoviesAppUITests: XCTestCase {
         }
         searchButton.tap()
 
-        let searchField = app.searchFields.firstMatch
+        let searchField = app.textFields["movie-search-field"]
         guard searchField.waitForExistence(timeout: 5) else {
             XCTFail("Expected the movie search field.")
             return
@@ -149,7 +149,7 @@ final class MoviesAppUITests: XCTestCase {
 
         searchButton.tap()
 
-        let searchField = app.searchFields.firstMatch
+        let searchField = app.textFields["movie-search-field"]
 
         guard searchField.waitForExistence(timeout: 5) else {
             XCTFail("Expected the movie search field.")
@@ -167,5 +167,61 @@ final class MoviesAppUITests: XCTestCase {
             emptyState.waitForExistence(timeout: 5),
             "Expected an empty state for an unknown movie."
         )
+    }
+
+    // Finds a series and opens its TV details.
+    @MainActor
+    func testSearchSeriesAndOpenDetails() {
+        let app = XCUIApplication()
+        app.launchArguments = ["-ui-testing"]
+        app.launch()
+
+        let searchButton = app.buttons["Search movies"]
+        guard searchButton.waitForExistence(timeout: 5) else {
+            XCTFail("Expected the search button on Trending.")
+            return
+        }
+        searchButton.tap()
+
+        let seriesButton = app.segmentedControls["search-media-type"]
+            .buttons["Series"]
+        guard seriesButton.waitForExistence(timeout: 5) else {
+            XCTFail("Expected the Series option.")
+            return
+        }
+        seriesButton.tap()
+
+        let searchField = app.textFields["movie-search-field"]
+        guard searchField.waitForExistence(timeout: 5) else {
+            XCTFail("Expected the search field.")
+            return
+        }
+        searchField.tap()
+        searchField.typeText("Breaking Bad\n")
+
+        let seriesCell = app.descendants(matching: .cell)
+            .containing(.any, identifier: "movie-card-1396")
+            .firstMatch
+
+        let cellIsHittable = XCTNSPredicateExpectation(
+            predicate: NSPredicate(format: "exists == true AND isHittable == true"),
+            object: seriesCell
+        )
+        guard XCTWaiter.wait(for: [cellIsHittable], timeout: 5) == .completed else {
+            attachSearchDiagnostics(app: app)
+            XCTFail("Expected a tappable series result.")
+            return
+        }
+        seriesCell.tap()
+
+        XCTAssertTrue(
+            app.navigationBars["Series Details"].waitForExistence(timeout: 5)
+        )
+        XCTAssertTrue(
+            app.staticTexts["Breaking Bad"].waitForExistence(timeout: 5)
+        )
+        XCTAssertTrue(app.staticTexts["Seasons: 5"].exists)
+        XCTAssertTrue(app.staticTexts["Episodes: 62"].exists)
+        XCTAssertFalse(app.navigationBars["Movie Details"].exists)
     }
 }

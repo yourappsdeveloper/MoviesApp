@@ -178,7 +178,7 @@ private actor MovieDetailsStub: MovieDetailsProviding {
     private let result: Result<MovieDetails, StubError>
     private(set) var requestedIDs: [Int] = []
     private(set) var requestedMediaTypes: [MediaType] = []
-    
+
     init(result: Result<MovieDetails, StubError>) {
         self.result = result
     }
