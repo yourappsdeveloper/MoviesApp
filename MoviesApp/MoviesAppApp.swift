@@ -17,6 +17,28 @@ struct MoviesAppApp: App {
     private let movieDetailsProvider: (any MovieDetailsProviding)?
     
     init() {
+#if DEBUG
+if ProcessInfo.processInfo.arguments.contains("-ui-testing") {
+    let provider = UITestMoviesProvider()
+
+    _trendingViewModel = State(
+        initialValue: TrendingViewModel(
+            moviesProvider: provider
+        )
+    )
+
+    _searchViewModel = State(
+        initialValue: MovieSearchViewModel(
+            moviesProvider: provider
+        )
+    )
+
+    movieDetailsProvider = provider
+
+    return
+}
+#endif
+        
         let token = ProcessInfo.processInfo.environment["TMDB_READ_ACCESS_TOKEN"]?
             .trimmingCharacters(in: .whitespacesAndNewlines)
         
