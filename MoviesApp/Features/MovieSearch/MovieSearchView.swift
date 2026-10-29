@@ -29,6 +29,9 @@ struct MovieSearchView: View {
                     isPresented: $isSearchActive,
                     prompt: "Search movies"
                 )
+                .onSubmit(of: .search) {
+                    isSearchActive = false
+                }
                 .toolbar {
                     ToolbarItem(placement: .topBarTrailing) {
                         Button("Done") {
@@ -104,6 +107,7 @@ struct MovieSearchView: View {
                 navigationPath.append(movie.id)
             }
         )
+        .accessibilityIdentifier("search-results")
     }
 
     // Shows a failed search with an explicit retry action.
