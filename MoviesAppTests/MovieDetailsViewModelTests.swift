@@ -60,19 +60,75 @@ final class MovieDetailsViewModelTests: XCTestCase {
         XCTAssertEqual(requestedIDs, [157336])
     }
 
-    // Creates sample details shared by these tests.
-    private func makeMovie() -> MovieDetails {
+    // Creates sample details with a configurable release date.
+    private func makeMovie(
+        releaseDate: String? = "2014-11-05"
+    ) -> MovieDetails {
         MovieDetails(
             id: 157336,
             title: "Interstellar",
             overview: "A journey through space.",
             posterPath: "/poster.jpg",
             backdropPath: "/backdrop.jpg",
-            releaseDate: "2014-11-05",
+            releaseDate: releaseDate,
             runtime: 169,
             voteAverage: 8.4,
             voteCount: 35000
         )
+    }
+    
+    // Parses the release date using the Gregorian calendar in GMT.
+    func testReleaseDateParsesValidValue() async {
+        let provider = MovieDetailsStub(
+            result: .success(makeMovie(releaseDate: "2014-11-05"))
+        )
+        let viewModel = MovieDetailsViewModel(
+            movieID: 157336,
+            moviesProvider: provider
+        )
+
+        await viewModel.load()
+
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = .gmt
+
+        let expectedDate = calendar.date(
+            from: DateComponents(
+                year: 2014,
+                month: 11,
+                day: 5
+            )
+        )
+
+        XCTAssertNotNil(expectedDate)
+        XCTAssertEqual(viewModel.releaseDate, expectedDate)
+    }
+
+    // Returns no date when the API provides no usable value.
+    func testReleaseDateIsNilForMissingOrInvalidValues() async {
+        let values: [String?] = [
+            nil,
+            "",
+            "not-a-date",
+            "2014-02-30"
+        ]
+
+        for value in values {
+            let provider = MovieDetailsStub(
+                result: .success(makeMovie(releaseDate: value))
+            )
+            let viewModel = MovieDetailsViewModel(
+                movieID: 157336,
+                moviesProvider: provider
+            )
+
+            await viewModel.load()
+
+            XCTAssertNil(
+                viewModel.releaseDate,
+                "Expected no date for: \(value ?? "nil")"
+            )
+        }
     }
 }
 
