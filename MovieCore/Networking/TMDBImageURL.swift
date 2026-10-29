@@ -8,18 +8,51 @@
 
 import Foundation
 
-/// Builds poster URLs using the displayed width and display scale.
 public enum TMDBImageURL {
     private static let posterWidths = [92, 154, 185, 342, 500, 780]
+    private static let backdropWidths = [300, 780, 1280]
 
+    // Selects a poster size for the displayed width and scale.
     public static func poster(
         path: String?,
         width: Double,
         scale: Double
     ) -> URL? {
-        
-        guard let path, !path.isEmpty,
-              width > 0, scale > 0 else {
+        imageURL(
+            path: path,
+            width: width,
+            scale: scale,
+            availableWidths: posterWidths
+        )
+    }
+
+    // Selects a backdrop size for the displayed width and scale.
+    public static func backdrop(
+        path: String?,
+        width: Double,
+        scale: Double
+    ) -> URL? {
+        imageURL(
+            path: path,
+            width: width,
+            scale: scale,
+            availableWidths: backdropWidths
+        )
+    }
+
+    // Builds an image URL using the smallest sufficient size.
+    private static func imageURL(
+        path: String?,
+        width: Double,
+        scale: Double,
+        availableWidths: [Int]
+    ) -> URL? {
+        guard let path,
+              !path.isEmpty,
+              width.isFinite,
+              scale.isFinite,
+              width > 0,
+              scale > 0 else {
             return nil
         }
 
@@ -29,16 +62,14 @@ public enum TMDBImageURL {
             return nil
         }
 
-        let size: String
-
-        if let width = posterWidths.first(where: {
+        let selectedWidth = availableWidths.first {
             Double($0) >= pixelWidth
-        }) {
-            size = "w\(width)"
-        } else {
-            size = "original"
         }
 
-        return URL(string: "https://image.tmdb.org/t/p/\(size)\(path)")
+        let size = selectedWidth.map { "w\($0)" } ?? "original"
+
+        return URL(
+            string: "https://image.tmdb.org/t/p/\(size)\(path)"
+        )
     }
 }
