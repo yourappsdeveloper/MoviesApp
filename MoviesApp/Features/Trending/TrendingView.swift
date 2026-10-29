@@ -18,7 +18,15 @@ struct TrendingView: View {
         NavigationStack {
             content
                 .navigationTitle("Trending")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbarBackground(
+                    AppTheme.navigationBackground,
+                    for: .navigationBar
+                )
+                .toolbarBackground(.visible, for: .navigationBar)
+                .toolbarColorScheme(.dark, for: .navigationBar)
         }
+        .tint(AppTheme.accent)
         .task(id: retryCount) {
             await viewModel.load()
         }
