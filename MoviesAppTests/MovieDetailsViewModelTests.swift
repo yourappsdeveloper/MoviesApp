@@ -5,7 +5,6 @@
 //  Created by Alex  on 29.10.2026.
 //
 
-
 import MovieCore
 import XCTest
 @testable import MoviesApp

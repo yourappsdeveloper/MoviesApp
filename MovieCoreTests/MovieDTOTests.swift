@@ -5,7 +5,6 @@
 //  Created by Alex  on 28.10.2026.
 //
 
-
 // Checks how movie JSON fields and missing posters are decoded.
 import Foundation
 import XCTest

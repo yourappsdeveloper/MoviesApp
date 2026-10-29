@@ -5,7 +5,6 @@
 //  Created by Alex  on 28.10.2026.
 //
 
-
 // Checks API response decoding and domain mapping without a network connection.
 import Foundation
 import XCTest

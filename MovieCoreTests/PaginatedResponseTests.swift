@@ -5,7 +5,6 @@
 //  Created by Alex  on 28.10.2026.
 //
 
-
 // Checks page metadata and the movies inside a paginated response.
 import Foundation
 import XCTest

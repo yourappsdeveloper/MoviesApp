@@ -5,7 +5,6 @@
 //  Created by Alex  on 28.10.2026.
 //
 
-
 // Checks loading, errors, and retry behavior without calling TMDB.
 import XCTest
 import MovieCore
