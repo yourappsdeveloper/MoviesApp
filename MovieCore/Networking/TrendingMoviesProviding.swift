@@ -6,6 +6,7 @@
 //
 
 
+/// Loads a specific page of trending movies.
 public protocol TrendingMoviesProviding: Sendable {
-    func fetchTrendingMovies() async throws -> [Movie]
+    func fetchTrendingMovies(page: Int) async throws -> MoviePage
 }

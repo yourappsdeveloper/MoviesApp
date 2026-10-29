@@ -127,15 +127,21 @@ private actor TrendingMoviesStub: TrendingMoviesProviding {
         self.results = results
     }
 
-    /// Returns the next prepared result and counts the request.
-    func fetchTrendingMovies() async throws -> [Movie] {
+    /// Returns the next prepared movie list as a single-page response.
+    func fetchTrendingMovies(page: Int) async throws -> MoviePage {
         requestCount += 1
 
         guard !results.isEmpty else {
             throw StubError.unexpectedRequest
         }
 
-        return try results.removeFirst().get()
+        let movies = try results.removeFirst().get()
+
+        return MoviePage(
+            page: page,
+            totalPages: 1,
+            movies: movies
+        )
     }
 }
 

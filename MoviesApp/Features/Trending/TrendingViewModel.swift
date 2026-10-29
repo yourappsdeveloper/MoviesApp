@@ -43,11 +43,11 @@ final class TrendingViewModel {
         state = .loading
 
         do {
-            let movies = try await moviesProvider.fetchTrendingMovies()
+            let result = try await moviesProvider.fetchTrendingMovies(page: 1)
 
             try Task.checkCancellation()
 
-            state = .loaded(movies)
+            state = .loaded(result.movies)
         } catch {
             if Task.isCancelled || error is CancellationError {
                 state = .idle
