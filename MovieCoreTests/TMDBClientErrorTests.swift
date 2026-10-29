@@ -91,15 +91,14 @@ final class TMDBClientErrorTests: XCTestCase {
 // Returns HTTP 401 without contacting the real API.
 private final class UnauthorizedURLProtocol:
     URLProtocol,
-    @unchecked Sendable
-{
+    @unchecked Sendable {
     // Intercepts requests made by this test session.
-    override class func canInit(with request: URLRequest) -> Bool {
+    override static func canInit(with request: URLRequest) -> Bool {
         true
     }
 
     // Uses the original request without modification.
-    override class func canonicalRequest(
+    override static func canonicalRequest(
         for request: URLRequest
     ) -> URLRequest {
         request
@@ -137,15 +136,14 @@ private final class UnauthorizedURLProtocol:
 // Returns HTTP 500 without contacting the real API.
 private final class ServerErrorURLProtocol:
     URLProtocol,
-    @unchecked Sendable
-{
+    @unchecked Sendable {
     // Intercepts requests made by this test session.
-    override class func canInit(with request: URLRequest) -> Bool {
+    override static func canInit(with request: URLRequest) -> Bool {
         true
     }
 
     // Uses the original request without modification.
-    override class func canonicalRequest(
+    override static func canonicalRequest(
         for request: URLRequest
     ) -> URLRequest {
         request
@@ -187,15 +185,14 @@ private final class ServerErrorURLProtocol:
 // Returns HTTP 200 with malformed JSON.
 private final class InvalidJSONURLProtocol:
     URLProtocol,
-    @unchecked Sendable
-{
+    @unchecked Sendable {
     // Intercepts requests made by this test session.
-    override class func canInit(with request: URLRequest) -> Bool {
+    override static func canInit(with request: URLRequest) -> Bool {
         true
     }
 
     // Uses the original request without modification.
-    override class func canonicalRequest(
+    override static func canonicalRequest(
         for request: URLRequest
     ) -> URLRequest {
         request

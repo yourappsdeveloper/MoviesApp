@@ -68,40 +68,31 @@ final class MoviesAppUITests: XCTestCase {
         app.launch()
 
         let searchButton = app.buttons["Search movies"]
-
         guard searchButton.waitForExistence(timeout: 5) else {
             XCTFail("Expected the search button on Trending.")
             return
         }
-
         searchButton.tap()
 
         let searchField = app.searchFields.firstMatch
-
         guard searchField.waitForExistence(timeout: 5) else {
             XCTFail("Expected the movie search field.")
             return
         }
-
         searchField.tap()
         searchField.typeText("Interstellar\n")
 
         let searchResults = app.descendants(matching: .any)
             .matching(identifier: "search-results")
             .firstMatch
-
         guard searchResults.waitForExistence(timeout: 5) else {
             XCTFail("Expected the search results collection.")
             return
         }
 
         let movieCell = searchResults.descendants(matching: .cell)
-            .containing(
-                .any,
-                identifier: "movie-card-157336"
-            )
+            .containing(.any, identifier: "movie-card-157336")
             .firstMatch
-
         guard movieCell.waitForExistence(timeout: 5) else {
             XCTFail("Expected a matching movie in search results.")
             return
@@ -111,38 +102,35 @@ final class MoviesAppUITests: XCTestCase {
             predicate: NSPredicate(format: "isHittable == true"),
             object: movieCell
         )
-
-        guard XCTWaiter.wait(
-            for: [cellIsHittable],
-            timeout: 5
-        ) == .completed else {
-            let screenshot = XCTAttachment(screenshot: app.screenshot())
-            screenshot.name = "Search screen when the cell is not tappable"
-            screenshot.lifetime = .keepAlways
-            add(screenshot)
-
-            let hierarchy = XCTAttachment(string: app.debugDescription)
-            hierarchy.name = "Search accessibility hierarchy"
-            hierarchy.lifetime = .keepAlways
-            add(hierarchy)
-
+        guard XCTWaiter.wait(for: [cellIsHittable], timeout: 5) == .completed else {
+            attachSearchDiagnostics(app: app)
             XCTFail("Expected the movie cell to become tappable.")
             return
         }
-
         movieCell.tap()
 
-        guard app.navigationBars["Movie Details"]
-            .waitForExistence(timeout: 5) else {
+        guard app.navigationBars["Movie Details"].waitForExistence(timeout: 5) else {
             XCTFail("Expected details for the selected search result.")
             return
         }
-
         XCTAssertTrue(
-            app.staticTexts["Interstellar"]
-                .waitForExistence(timeout: 5),
+            app.staticTexts["Interstellar"].waitForExistence(timeout: 5),
             "Expected the selected movie title."
         )
+    }
+
+    // Saves the screen and accessibility hierarchy when search cannot be tapped.
+    @MainActor
+    private func attachSearchDiagnostics(app: XCUIApplication) {
+        let screenshot = XCTAttachment(screenshot: app.screenshot())
+        screenshot.name = "Search screen when the cell is not tappable"
+        screenshot.lifetime = .keepAlways
+        add(screenshot)
+
+        let hierarchy = XCTAttachment(string: app.debugDescription)
+        hierarchy.name = "Search accessibility hierarchy"
+        hierarchy.lifetime = .keepAlways
+        add(hierarchy)
     }
 
     // Shows an empty state when no movies match the search.

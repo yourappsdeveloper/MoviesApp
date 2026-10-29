@@ -79,21 +79,20 @@ final class MovieSearchClientTests: XCTestCase {
 // Checks the search request and supplies a fixed response.
 private final class MovieSearchURLProtocol:
     URLProtocol,
-    @unchecked Sendable
-{
+    @unchecked Sendable {
     // Intercepts requests made by this test session.
-    override class func canInit(with request: URLRequest) -> Bool {
+    override static func canInit(with request: URLRequest) -> Bool {
         true
     }
 
     // Uses the original request without modification.
-    override class func canonicalRequest(
+    override static func canonicalRequest(
         for request: URLRequest
     ) -> URLRequest {
         request
     }
 
-    // Validates query parameters and delivers sample search results.
+    // Delivers sample search results after checking the request.
     override func startLoading() {
         guard let url = request.url,
               let components = URLComponents(
@@ -114,6 +113,37 @@ private final class MovieSearchURLProtocol:
             return
         }
 
+        validateRequest(components: components)
+
+        let data = Data(
+            """
+            {
+                "page": 2,
+                "total_pages": 3,
+                "total_results": 41,
+                "results": [
+                    {
+                        "id": 42,
+                        "title": "Love & Robots",
+                        "overview": "A sample search result.",
+                        "poster_path": "/poster.jpg"
+                    }
+                ]
+            }
+            """.utf8
+        )
+
+        client?.urlProtocol(
+            self,
+            didReceive: response,
+            cacheStoragePolicy: .notAllowed
+        )
+        client?.urlProtocol(self, didLoad: data)
+        client?.urlProtocolDidFinishLoading(self)
+    }
+
+    // Checks the search endpoint, headers, and query parameters.
+    private func validateRequest(components: URLComponents) {
         XCTAssertEqual(components.scheme, "https")
         XCTAssertEqual(components.host, "api.themoviedb.org")
         XCTAssertEqual(components.path, "/3/search/movie")
@@ -141,32 +171,6 @@ private final class MovieSearchURLProtocol:
             queryItems.first { $0.name == "include_adult" }?.value,
             "false"
         )
-
-        let data = Data(
-            """
-            {
-                "page": 2,
-                "total_pages": 3,
-                "total_results": 41,
-                "results": [
-                    {
-                        "id": 42,
-                        "title": "Love & Robots",
-                        "overview": "A sample search result.",
-                        "poster_path": "/poster.jpg"
-                    }
-                ]
-            }
-            """.utf8
-        )
-
-        client?.urlProtocol(
-            self,
-            didReceive: response,
-            cacheStoragePolicy: .notAllowed
-        )
-        client?.urlProtocol(self, didLoad: data)
-        client?.urlProtocolDidFinishLoading(self)
     }
 
     // No asynchronous work remains to cancel.

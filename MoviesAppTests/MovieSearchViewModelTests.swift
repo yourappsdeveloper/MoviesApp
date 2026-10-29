@@ -109,12 +109,8 @@ final class MovieSearchViewModelTests: XCTestCase {
 
     // Keeps the latest results when an older request finishes afterward.
     func testOlderResponseDoesNotReplaceLatestResults() async {
-        let firstRequestStarted = expectation(
-            description: "First request started"
-        )
-        let secondRequestStarted = expectation(
-            description: "Second request started"
-        )
+        let firstRequestStarted = expectation(description: "First request started")
+        let secondRequestStarted = expectation(description: "Second request started")
 
         let provider = ControlledMovieSearchStub { query in
             switch query {
@@ -127,9 +123,7 @@ final class MovieSearchViewModelTests: XCTestCase {
             }
         }
 
-        let viewModel = MovieSearchViewModel(
-            moviesProvider: provider
-        )
+        let viewModel = MovieSearchViewModel(moviesProvider: provider)
         let olderMovie = makeMovie()
         let latestMovie = Movie(
             id: 348,
@@ -141,25 +135,14 @@ final class MovieSearchViewModelTests: XCTestCase {
         let firstTask = Task {
             await viewModel.search(query: "Interstellar")
         }
-
-        await fulfillment(
-            of: [firstRequestStarted],
-            timeout: 2
-        )
+        await fulfillment(of: [firstRequestStarted], timeout: 2)
 
         let secondTask = Task {
             await viewModel.search(query: "Alien")
         }
+        await fulfillment(of: [secondRequestStarted], timeout: 2)
 
-        await fulfillment(
-            of: [secondRequestStarted],
-            timeout: 2
-        )
-
-        await provider.complete(
-            query: "Alien",
-            movies: [latestMovie]
-        )
+        await provider.complete(query: "Alien", movies: [latestMovie])
         await secondTask.value
 
         if case .loaded(let latestResults) = viewModel.state {
@@ -168,10 +151,7 @@ final class MovieSearchViewModelTests: XCTestCase {
             XCTFail("Expected the latest search results.")
         }
 
-        await provider.complete(
-            query: "Interstellar",
-            movies: [olderMovie]
-        )
+        await provider.complete(query: "Interstellar", movies: [olderMovie])
         await firstTask.value
 
         guard case .loaded(let finalResults) = viewModel.state else {

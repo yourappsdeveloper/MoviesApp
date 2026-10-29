@@ -56,15 +56,14 @@ final class MovieDetailsClientTests: XCTestCase {
 // Returns a fixed response for movie details requests.
 private final class MovieDetailsURLProtocol:
     URLProtocol,
-    @unchecked Sendable
-{
+    @unchecked Sendable {
     // Handles requests made by this test session.
-    override class func canInit(with request: URLRequest) -> Bool {
+    override static func canInit(with request: URLRequest) -> Bool {
         true
     }
 
     // Uses the request without changing it.
-    override class func canonicalRequest(
+    override static func canonicalRequest(
         for request: URLRequest
     ) -> URLRequest {
         request

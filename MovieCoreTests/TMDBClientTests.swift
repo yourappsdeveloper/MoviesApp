@@ -68,12 +68,12 @@ final class TMDBClientTests: XCTestCase {
 /// Supplies a fixed response only to sessions that register this helper.
 private final class SuccessURLProtocol: URLProtocol, @unchecked Sendable {
     /// Handles every request made through this test session.
-    override class func canInit(with request: URLRequest) -> Bool {
+    override static func canInit(with request: URLRequest) -> Bool {
         true
     }
 
     /// Leaves the intercepted request unchanged.
-    override class func canonicalRequest(
+    override static func canonicalRequest(
         for request: URLRequest
     ) -> URLRequest {
         request
