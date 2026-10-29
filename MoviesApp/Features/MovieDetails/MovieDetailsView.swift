@@ -60,32 +60,36 @@ struct MovieDetailsView: View {
 
     private func detailsView(_ movie: MovieDetails) -> some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
-                posterView(movie)
+            VStack(spacing: 0) {
+                headerView(movie)
 
-                Text(movie.title)
-                    .font(.title2.bold())
-                    .accessibilityAddTraits(.isHeader)
+                VStack(alignment: .leading, spacing: 20) {
+                    Text(movie.title)
+                        .font(.title2.bold())
+                        .accessibilityAddTraits(.isHeader)
 
-                ratingView(movie)
-                releaseDateView
-                
-                if let runtime = movie.runtime, runtime > 0 {
-                    Label("\(runtime) min", systemImage: "clock")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                    ratingView(movie)
+
+                    releaseDateView
+
+                    if let runtime = movie.runtime, runtime > 0 {
+                        Label("\(runtime) min", systemImage: "clock")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+
+                    if !movie.overview.isEmpty {
+                        overviewView(movie.overview)
+                    }
                 }
-
-                if !movie.overview.isEmpty {
-                    overviewView(movie.overview)
-                }
+                .frame(maxWidth: 680, alignment: .leading)
+                .padding(16)
+                .frame(maxWidth: .infinity, alignment: .center)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(16)
         }
         .scrollIndicators(.hidden)
     }
-
+    
     private func posterView(_ movie: MovieDetails) -> some View {
         CachedPosterView(
             url: TMDBImageURL.poster(
@@ -148,6 +152,41 @@ struct MovieDetailsView: View {
             Text(overview)
                 .font(.body)
         }
+    }
+    
+    private func headerView(_ movie: MovieDetails) -> some View {
+        posterView(movie)
+            .padding(.vertical, 24)
+            .background {
+                backdropView(movie)
+            }
+    }
+
+    private func backdropView(_ movie: MovieDetails) -> some View {
+        AppTheme.navigationBackground
+            .overlay {
+                if movie.backdropPath != nil {
+                    GeometryReader { geometry in
+                        CachedPosterView(
+                            url: TMDBImageURL.backdrop(
+                                path: movie.backdropPath,
+                                width: Double(geometry.size.width),
+                                scale: Double(displayScale)
+                            )
+                        )
+                        .frame(
+                            width: geometry.size.width,
+                            height: geometry.size.height
+                        )
+                        .clipped()
+                        .overlay {
+                            AppTheme.navigationBackground.opacity(0.75)
+                        }
+                    }
+                }
+            }
+            .clipped()
+            .accessibilityHidden(true)
     }
 
     private func errorView(_ message: String) -> some View {
