@@ -21,12 +21,13 @@ struct CachedPosterView: View {
 
     var body: some View {
         ZStack {
+            placeholder
+
             if let image = displayedImage {
                 Image(uiImage: image)
                     .resizable()
                     .scaledToFill()
-            } else {
-                placeholder
+                    .transition(.opacity)
             }
         }
         .task(id: url) {
@@ -84,7 +85,11 @@ struct CachedPosterView: View {
             try Task.checkCancellation()
 
             cache.insert(preparedImage, for: url)
-            loadedPoster = (url: url, image: preparedImage)
+            cache.insert(preparedImage, for: url)
+
+            withAnimation(.easeInOut(duration: 0.25)) {
+                loadedPoster = (url: url, image: preparedImage)
+            }
         } catch {
             // Keep the placeholder if loading fails or is cancelled.
         }
