@@ -28,6 +28,7 @@ struct MovieCardView: View {
         }
         .shadow(color: .black.opacity(0.06), radius: 3, y: 2)
         .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("movie-card-\(movie.id)")
     }
 
     private var poster: some View {

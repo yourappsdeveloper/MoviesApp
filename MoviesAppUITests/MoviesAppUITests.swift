@@ -7,18 +7,56 @@
 
 import XCTest
 
+// Checks the main navigation using fixed movie data.
 final class MoviesAppUITests: XCTestCase {
 
-    override func setUpWithError() throws {
-        // Put setup code here. This method is called before the invocation of each test method in the class.
+    // Opens movie details and returns to the trending list.
+    @MainActor
+    func testOpenMovieDetailsAndReturnToTrending() {
+        let app = XCUIApplication()
+        app.launchArguments = ["-ui-testing"]
+        app.launch()
 
-        // In UI tests it is usually best to stop immediately when a failure occurs.
-        continueAfterFailure = false
+        let movieCard = app.descendants(matching: .any)
+            .matching(identifier: "movie-card-157336")
+            .firstMatch
 
-        // In UI tests it’s important to set the initial state - such as interface orientation - required for your tests before they run. The setUp method is a good place to do this.
-    }
+        XCTAssertTrue(
+            movieCard.waitForExistence(timeout: 5),
+            "Expected the sample movie in Trending."
+        )
 
-    override func tearDownWithError() throws {
-        // Put teardown code here. This method is called after the invocation of each test method in the class.
+        movieCard.tap()
+
+        let detailsNavigationBar = app.navigationBars["Movie Details"]
+
+        XCTAssertTrue(
+            detailsNavigationBar.waitForExistence(timeout: 5),
+            "Expected the movie details screen."
+        )
+
+        XCTAssertTrue(
+            app.staticTexts["Interstellar"].waitForExistence(timeout: 5),
+            "Expected the selected movie title."
+        )
+
+        XCTAssertTrue(
+            app.staticTexts[
+                "A team of explorers travels through space."
+            ].waitForExistence(timeout: 5),
+            "Expected the selected movie overview."
+        )
+
+        let backButton = detailsNavigationBar.buttons.element(boundBy: 0)
+
+        XCTAssertTrue(backButton.exists)
+        backButton.tap()
+
+        XCTAssertTrue(
+            app.navigationBars["Trending"].waitForExistence(timeout: 5),
+            "Expected to return to Trending."
+        )
+
+        XCTAssertTrue(movieCard.waitForExistence(timeout: 5))
     }
 }
