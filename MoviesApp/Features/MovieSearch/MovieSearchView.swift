@@ -96,6 +96,7 @@ struct MovieSearchView: View {
 
     private var emptyView: some View {
         ContentUnavailableView.search(text: query)
+            .accessibilityIdentifier("search-empty-state")
     }
 
     // Displays search results using the existing movie collection.

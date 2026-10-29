@@ -144,4 +144,40 @@ final class MoviesAppUITests: XCTestCase {
             "Expected the selected movie title."
         )
     }
+    
+    // Shows an empty state when no movies match the search.
+    @MainActor
+    func testSearchShowsEmptyStateForUnknownMovie() {
+        let app = XCUIApplication()
+        app.launchArguments = ["-ui-testing"]
+        app.launch()
+
+        let searchButton = app.buttons["Search movies"]
+
+        guard searchButton.waitForExistence(timeout: 5) else {
+            XCTFail("Expected the search button on Trending.")
+            return
+        }
+
+        searchButton.tap()
+
+        let searchField = app.searchFields.firstMatch
+
+        guard searchField.waitForExistence(timeout: 5) else {
+            XCTFail("Expected the movie search field.")
+            return
+        }
+
+        searchField.tap()
+        searchField.typeText("NoMatchingMovieXYZ\n")
+
+        let emptyState = app.descendants(matching: .any)
+            .matching(identifier: "search-empty-state")
+            .firstMatch
+
+        XCTAssertTrue(
+            emptyState.waitForExistence(timeout: 5),
+            "Expected an empty state for an unknown movie."
+        )
+    }
 }
