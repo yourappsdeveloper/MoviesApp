@@ -10,10 +10,12 @@ import MovieCore
 import SwiftUI
 
 struct MovieDetailsView: View {
+    
     @Environment(\.displayScale) private var displayScale
     @State private var retryCount = 0
     @State private var viewModel: MovieDetailsViewModel
-
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    
     init(
         movieID: Int,
         moviesProvider: any MovieDetailsProviding
@@ -58,50 +60,69 @@ struct MovieDetailsView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
+    // Adapts the details layout to the available width and text size.
     private func detailsView(_ movie: MovieDetails) -> some View {
-        ScrollView {
-            VStack(spacing: 0) {
-                headerView(movie)
+        GeometryReader { geometry in
+            let usesWideLayout = geometry.size.width >= 600
+                && !dynamicTypeSize.isAccessibilitySize
 
-                VStack(alignment: .leading, spacing: 20) {
-                    Text(movie.title)
-                        .font(.title2.bold())
-                        .accessibilityAddTraits(.isHeader)
+            ScrollView {
+                VStack(spacing: 0) {
+                    headerView(movie, usesWideLayout: usesWideLayout)
 
-                    ratingView(movie)
+                    VStack(alignment: .leading, spacing: 20) {
+                        if !usesWideLayout {
+                            movieInfoView(movie)
+                        }
 
-                    releaseDateView
-
-                    if let runtime = movie.runtime, runtime > 0 {
-                        Label("\(runtime) min", systemImage: "clock")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
+                        if !movie.overview.isEmpty {
+                            overviewView(movie.overview)
+                        }
                     }
-
-                    if !movie.overview.isEmpty {
-                        overviewView(movie.overview)
-                    }
+                    .frame(maxWidth: 680, alignment: .leading)
+                    .padding(16)
+                    .frame(maxWidth: .infinity)
                 }
-                .frame(maxWidth: 680, alignment: .leading)
-                .padding(16)
-                .frame(maxWidth: .infinity, alignment: .center)
             }
+            .scrollIndicators(.hidden)
         }
-        .scrollIndicators(.hidden)
     }
     
-    private func posterView(_ movie: MovieDetails) -> some View {
+    // Groups the title, rating, release date, and runtime.
+    private func movieInfoView(_ movie: MovieDetails) -> some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text(movie.title)
+                .font(.title2.bold())
+                .accessibilityAddTraits(.isHeader)
+
+            ratingView(movie)
+
+            releaseDateView
+
+            if let runtime = movie.runtime, runtime > 0 {
+                Label("\(runtime) min", systemImage: "clock")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+    
+    // Loads a poster at the resolution needed for its displayed size.
+    private func posterView(
+        _ movie: MovieDetails,
+        width: CGFloat = 160
+    ) -> some View {
         CachedPosterView(
             url: TMDBImageURL.poster(
                 path: movie.posterPath,
-                width: 160,
+                width: Double(width),
                 scale: Double(displayScale)
             )
         )
-        .frame(width: 160, height: 240)
+        .frame(width: width, height: width * 1.5)
         .clipped()
         .clipShape(RoundedRectangle(cornerRadius: 8))
-        .frame(maxWidth: .infinity)
         .accessibilityHidden(true)
     }
 
@@ -154,12 +175,31 @@ struct MovieDetailsView: View {
         }
     }
     
-    private func headerView(_ movie: MovieDetails) -> some View {
-        posterView(movie)
-            .padding(.vertical, 24)
-            .background {
-                backdropView(movie)
+    // Places movie information beside the poster on wider screens.
+    private func headerView(
+        _ movie: MovieDetails,
+        usesWideLayout: Bool
+    ) -> some View {
+        Group {
+            if usesWideLayout {
+                HStack(alignment: .center, spacing: 24) {
+                    posterView(movie, width: 120)
+
+                    movieInfoView(movie)
+                }
+                .frame(maxWidth: 680, alignment: .leading)
+                .padding(16)
+                .frame(maxWidth: .infinity)
+                .environment(\.colorScheme, .dark)
+            } else {
+                posterView(movie)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 24)
             }
+        }
+        .background {
+            backdropView(movie)
+        }
     }
 
     private func backdropView(_ movie: MovieDetails) -> some View {
