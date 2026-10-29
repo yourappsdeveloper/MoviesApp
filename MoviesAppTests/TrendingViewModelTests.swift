@@ -109,39 +109,152 @@ final class TrendingViewModelTests: XCTestCase {
 
         XCTAssertTrue(movies.isEmpty)
     }
+    
+    /// Creates a movie with a predictable ID for pagination tests.
+    private func makeMovie(id: Int) -> Movie {
+        Movie(
+            id: id,
+            title: "Movie \(id)",
+            overview: "",
+            posterPath: nil
+        )
+    }
+    
+    /// Appends unique movies in order and stops after the last page.
+    func testPaginationAppendsUniqueMoviesAndStopsAtLastPage() async {
+        let firstMovie = makeMovie(id: 1)
+        let secondMovie = makeMovie(id: 2)
+
+        let provider = TrendingMoviesStub(pages: [
+            .success(MoviePage(
+                page: 1,
+                totalPages: 2,
+                movies: [firstMovie]
+            )),
+            .success(MoviePage(
+                page: 2,
+                totalPages: 2,
+                movies: [firstMovie, secondMovie]
+            ))
+        ])
+        let viewModel = TrendingViewModel(moviesProvider: provider)
+
+        await viewModel.load()
+        await viewModel.loadNextPage()
+        await viewModel.loadNextPage()
+
+        guard case .loaded(let movies) = viewModel.state else {
+            XCTFail("Expected loaded movies.")
+            return
+        }
+
+        XCTAssertEqual(movies.map(\.id), [1, 2])
+
+        let requestedPages = await provider.requestedPages
+        XCTAssertEqual(requestedPages, [1, 2])
+    }
+    
+    /// Keeps existing movies after failure and retries the same page explicitly.
+    func testPaginationPreservesMoviesAndRetriesFailedPage() async {
+        let firstMovie = makeMovie(id: 1)
+        let secondMovie = makeMovie(id: 2)
+
+        let provider = TrendingMoviesStub(pages: [
+            .success(MoviePage(
+                page: 1,
+                totalPages: 2,
+                movies: [firstMovie]
+            )),
+            .failure(.requestFailed),
+            .success(MoviePage(
+                page: 2,
+                totalPages: 2,
+                movies: [secondMovie]
+            ))
+        ])
+        let viewModel = TrendingViewModel(moviesProvider: provider)
+
+        await viewModel.load()
+        await viewModel.loadNextPage()
+
+        guard case .loaded(let existingMovies) = viewModel.state else {
+            XCTFail("Expected existing movies to remain visible.")
+            return
+        }
+
+        XCTAssertEqual(existingMovies.map(\.id), [1])
+
+        guard case .failed = viewModel.nextPageState else {
+            XCTFail("Expected a pagination error.")
+            return
+        }
+
+        await viewModel.loadNextPage()
+
+        let pagesBeforeRetry = await provider.requestedPages
+        XCTAssertEqual(pagesBeforeRetry, [1, 2])
+
+        await viewModel.retryNextPage()
+
+        guard case .loaded(let updatedMovies) = viewModel.state else {
+            XCTFail("Expected loaded movies after retry.")
+            return
+        }
+
+        XCTAssertEqual(updatedMovies.map(\.id), [1, 2])
+
+        let pagesAfterRetry = await provider.requestedPages
+        XCTAssertEqual(pagesAfterRetry, [1, 2, 2])
+
+        guard case .idle = viewModel.nextPageState else {
+            XCTFail("Expected pagination to return to idle.")
+            return
+        }
+    }
 }
 
-/// Keeps prepared responses and the request count isolated to this actor.
+/// Returns prepared pages and records which pages were requested.
 private actor TrendingMoviesStub: TrendingMoviesProviding {
-    private var results: [Result<[Movie], StubError>]
+    private var results: [Result<MoviePage, StubError>]
 
-    private(set) var requestCount = 0
+    private(set) var requestedPages: [Int] = []
 
-    /// Prepares one response for a single request.
+    var requestCount: Int {
+        requestedPages.count
+    }
+
+    /// Wraps one movie list in a first-page response.
     init(result: Result<[Movie], StubError>) {
-        self.results = [result]
+        self.results = [
+            result.map {
+                MoviePage(page: 1, totalPages: 1, movies: $0)
+            }
+        ]
     }
 
-    /// Prepares responses in the order requests should receive them.
+    /// Prepares first-page responses for loading and retry tests.
     init(results: [Result<[Movie], StubError>]) {
-        self.results = results
+        self.results = results.map { result in
+            result.map {
+                MoviePage(page: 1, totalPages: 1, movies: $0)
+            }
+        }
     }
 
-    /// Returns the next prepared movie list as a single-page response.
+    /// Prepares page responses for pagination tests.
+    init(pages: [Result<MoviePage, StubError>]) {
+        self.results = pages
+    }
+
+    /// Records the requested page and returns the next prepared result.
     func fetchTrendingMovies(page: Int) async throws -> MoviePage {
-        requestCount += 1
+        requestedPages.append(page)
 
         guard !results.isEmpty else {
             throw StubError.unexpectedRequest
         }
 
-        let movies = try results.removeFirst().get()
-
-        return MoviePage(
-            page: page,
-            totalPages: 1,
-            movies: movies
-        )
+        return try results.removeFirst().get()
     }
 }
 
