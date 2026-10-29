@@ -91,6 +91,16 @@ final class MovieSearchViewModel {
         }
     }
     
+    // Retries the current query after a failed search.
+    func retrySearch() {
+        guard case .failed = state, !latestQuery.isEmpty else {
+            return
+        }
+
+        state = .loading
+        startSearch()
+    }
+    
     // Cancels pending work and resets the search state.
     func cancelSearch() {
         currentRequestID = UUID()
