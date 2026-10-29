@@ -82,57 +82,63 @@ public struct TMDBClient: TrendingMoviesProviding, MovieDetailsProviding, MovieS
         )
     }
 
-    public func fetchMovieDetails(id: Int) async throws -> MovieDetails {
+    /// Loads movie details using the shared implementation.
+    public func fetchMovieDetails(
+        id: Int
+    ) async throws -> MovieDetails {
+        try await fetchDetails(
+            id: id,
+            mediaType: .movie
+        )
+    }
+
+    /// Loads details using the selected movie or TV namespace.
+    public func fetchDetails(
+        id: Int,
+        mediaType: MediaType
+    ) async throws -> MovieDetails {
         guard id > 0 else {
             throw TMDBError.invalidMovieID
         }
 
-        try Task.checkCancellation()
+        let path = "\(mediaType.rawValue)/\(id)"
 
-        guard let url = URL(
-            string: "https://api.themoviedb.org/3/movie/\(id)"
-        ) else {
-            throw TMDBError.invalidURL
+        switch mediaType {
+        case .movie:
+            let dto: MovieDetailsDTO = try await fetch(
+                path: path
+            )
+            return dto.toDomain()
+
+        case .series:
+            let dto: SeriesDetailsDTO = try await fetch(
+                path: path
+            )
+            return dto.toDomain()
         }
-
-        var request = URLRequest(url: url)
-        request.httpMethod = "GET"
-        request.timeoutInterval = 30
-        request.setValue(
-            "Bearer \(token)",
-            forHTTPHeaderField: "Authorization"
-        )
-        request.setValue(
-            "application/json",
-            forHTTPHeaderField: "Accept"
-        )
-
-        let (data, response) = try await session.data(for: request)
-
-        guard let response = response as? HTTPURLResponse else {
-            throw TMDBError.invalidResponse
-        }
-
-        guard (200..<300).contains(response.statusCode) else {
-            throw TMDBError.httpStatus(response.statusCode)
-        }
-
-        try Task.checkCancellation()
-
-        let dto = try JSONDecoder().decode(
-            MovieDetailsDTO.self,
-            from: data
-        )
-
-        return dto.toDomain()
     }
 
-    // Searches movies by title and returns one page of results.
+    /// Searches movies using the shared media search implementation.
     public func searchMovies(
         query: String,
         page: Int
     ) async throws -> MoviePage {
-        let trimmedQuery = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        try await search(
+            query: query,
+            page: page,
+            mediaType: .movie
+        )
+    }
+
+    /// Searches the selected content type and returns one page.
+    public func search(
+        query: String,
+        page: Int,
+        mediaType: MediaType
+    ) async throws -> MoviePage {
+        let trimmedQuery = query.trimmingCharacters(
+            in: .whitespacesAndNewlines
+        )
 
         guard !trimmedQuery.isEmpty else {
             throw TMDBError.emptySearchQuery
@@ -142,19 +148,56 @@ public struct TMDBClient: TrendingMoviesProviding, MovieDetailsProviding, MovieS
             throw TMDBError.invalidPage
         }
 
-        try Task.checkCancellation()
-
-        guard var components = URLComponents(
-            string: "https://api.themoviedb.org/3/search/movie"
-        ) else {
-            throw TMDBError.invalidURL
-        }
-
-        components.queryItems = [
+        let queryItems = [
             URLQueryItem(name: "query", value: trimmedQuery),
             URLQueryItem(name: "page", value: String(page)),
             URLQueryItem(name: "include_adult", value: "false")
         ]
+        let path = "search/\(mediaType.rawValue)"
+
+        switch mediaType {
+        case .movie:
+            let result: PaginatedResponse<MovieDTO> = try await fetch(
+                path: path,
+                queryItems: queryItems
+            )
+
+            return MoviePage(
+                page: result.page,
+                totalPages: result.totalPages,
+                movies: result.results.map { $0.toDomain() }
+            )
+
+        case .series:
+            let result: PaginatedResponse<SeriesDTO> = try await fetch(
+                path: path,
+                queryItems: queryItems
+            )
+
+            return MoviePage(
+                page: result.page,
+                totalPages: result.totalPages,
+                movies: result.results.map { $0.toDomain() }
+            )
+        }
+    }
+
+    /// Performs an authenticated request and decodes its response.
+    private func fetch<Response: Decodable & Sendable>(
+        path: String,
+        queryItems: [URLQueryItem] = []
+    ) async throws -> Response {
+        try Task.checkCancellation()
+
+        guard var components = URLComponents(
+            string: "https://api.themoviedb.org/3/\(path)"
+        ) else {
+            throw TMDBError.invalidURL
+        }
+
+        if !queryItems.isEmpty {
+            components.queryItems = queryItems
+        }
 
         guard let url = components.url else {
             throw TMDBError.invalidURL
@@ -184,16 +227,7 @@ public struct TMDBClient: TrendingMoviesProviding, MovieDetailsProviding, MovieS
 
         try Task.checkCancellation()
 
-        let result = try JSONDecoder().decode(
-            PaginatedResponse<MovieDTO>.self,
-            from: data
-        )
-
-        return MoviePage(
-            page: result.page,
-            totalPages: result.totalPages,
-            movies: result.results.map { $0.toDomain() }
-        )
+        return try JSONDecoder().decode(Response.self, from: data)
     }
 }
 

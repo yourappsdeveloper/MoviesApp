@@ -27,9 +27,23 @@ final class MovieSearchViewModel {
     private var latestQuery = ""
     private var throttleTask: Task<Void, Never>?
     private var searchTask: Task<Void, Never>?
+    private(set) var mediaType: MediaType = .movie
 
     init(moviesProvider: any MovieSearchProviding) {
         self.moviesProvider = moviesProvider
+    }
+
+    // Repeats the current query using the newly selected content type.
+    func selectMediaType(_ mediaType: MediaType) {
+        guard self.mediaType != mediaType else {
+            return
+        }
+
+        let query = latestQuery
+
+        cancelSearch()
+        self.mediaType = mediaType
+        updateQuery(query)
     }
 
     // Keeps the latest query and schedules one search per throttle window.
@@ -136,9 +150,10 @@ final class MovieSearchViewModel {
         state = .loading
 
         do {
-            let result = try await moviesProvider.searchMovies(
+            let result = try await moviesProvider.search(
                 query: trimmedQuery,
-                page: 1
+                page: 1,
+                mediaType: mediaType
             )
 
             try Task.checkCancellation()

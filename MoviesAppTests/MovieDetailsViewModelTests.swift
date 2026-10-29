@@ -129,20 +129,67 @@ final class MovieDetailsViewModelTests: XCTestCase {
             )
         }
     }
+
+    // Passes the series ID and media type to the details provider.
+    func testLoadSeriesDetailsUsesSelectedMediaType() async {
+        let series = MovieDetails(
+            id: 1396,
+            title: "Breaking Bad",
+            overview: "A chemistry teacher's story.",
+            posterPath: nil,
+            backdropPath: nil,
+            releaseDate: "2008-01-20",
+            runtime: 47,
+            voteAverage: 8.9,
+            voteCount: 15000,
+            mediaType: .series,
+            numberOfSeasons: 5,
+            numberOfEpisodes: 62
+        )
+        let provider = MovieDetailsStub(
+            result: .success(series)
+        )
+        let viewModel = MovieDetailsViewModel(
+            movieID: 1396,
+            mediaType: .series,
+            moviesProvider: provider
+        )
+
+        await viewModel.load()
+
+        let requestedIDs = await provider.requestedIDs
+        let mediaTypes = await provider.requestedMediaTypes
+
+        XCTAssertEqual(requestedIDs, [1396])
+        XCTAssertEqual(mediaTypes, [.series])
+
+        guard case .loaded(let details) = viewModel.state else {
+            XCTFail("Expected loaded series details.")
+            return
+        }
+
+        XCTAssertEqual(details.title, "Breaking Bad")
+        XCTAssertEqual(details.mediaType, .series)
+    }
 }
 
 // Records requested IDs and returns a predefined result.
 private actor MovieDetailsStub: MovieDetailsProviding {
     private let result: Result<MovieDetails, StubError>
     private(set) var requestedIDs: [Int] = []
-
+    private(set) var requestedMediaTypes: [MediaType] = []
+    
     init(result: Result<MovieDetails, StubError>) {
         self.result = result
     }
 
     // Returns sample details or throws the configured error.
-    func fetchMovieDetails(id: Int) async throws -> MovieDetails {
+    func fetchDetails(
+        id: Int,
+        mediaType: MediaType
+    ) async throws -> MovieDetails {
         requestedIDs.append(id)
+        requestedMediaTypes.append(mediaType)
         return try result.get()
     }
 }

@@ -16,11 +16,13 @@ struct MovieDetailsView: View {
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     init(
         movieID: Int,
+        mediaType: MediaType = .movie,
         moviesProvider: any MovieDetailsProviding
     ) {
         _viewModel = State(
             initialValue: MovieDetailsViewModel(
                 movieID: movieID,
+                mediaType: mediaType,
                 moviesProvider: moviesProvider
             )
         )
@@ -28,7 +30,11 @@ struct MovieDetailsView: View {
 
     var body: some View {
         content
-            .navigationTitle("Movie Details")
+            .navigationTitle(
+                viewModel.mediaType == .movie
+                    ? "Movie Details"
+                    : "Series Details"
+            )
             .navigationBarTitleDisplayMode(.inline)
             .toolbarBackground(
                 AppTheme.navigationBackground,
@@ -86,7 +92,7 @@ struct MovieDetailsView: View {
         }
     }
 
-    // Groups the title, rating, release date, and runtime.
+    // Displays metadata appropriate for a movie or series.
     private func movieInfoView(_ movie: MovieDetails) -> some View {
         VStack(alignment: .leading, spacing: 16) {
             Text(movie.title)
@@ -98,7 +104,26 @@ struct MovieDetailsView: View {
             releaseDateView
 
             if let runtime = movie.runtime, runtime > 0 {
-                Label("\(runtime) min", systemImage: "clock")
+                Label(
+                    movie.mediaType == .series
+                        ? "\(runtime) min / episode"
+                        : "\(runtime) min",
+                    systemImage: "clock"
+                )
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+            }
+
+            if movie.mediaType == .series,
+               let seasons = movie.numberOfSeasons {
+                Text("Seasons: \(seasons)")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+
+            if movie.mediaType == .series,
+               let episodes = movie.numberOfEpisodes {
+                Text("Episodes: \(episodes)")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }

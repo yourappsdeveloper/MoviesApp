@@ -6,5 +6,8 @@
 //
 
 public protocol MovieDetailsProviding: Sendable {
-    func fetchMovieDetails(id: Int) async throws -> MovieDetails
+    func fetchDetails(
+        id: Int,
+        mediaType: MediaType
+    ) async throws -> MovieDetails
 }

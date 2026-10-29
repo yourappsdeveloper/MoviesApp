@@ -84,7 +84,6 @@ struct CachedPosterView: View {
             try Task.checkCancellation()
 
             cache.insert(preparedImage, for: url)
-            cache.insert(preparedImage, for: url)
 
             withAnimation(.easeInOut(duration: 0.25)) {
                 loadedPoster = (url: url, image: preparedImage)

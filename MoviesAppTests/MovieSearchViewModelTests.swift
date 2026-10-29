@@ -257,6 +257,36 @@ final class MovieSearchViewModelTests: XCTestCase {
             return
         }
     }
+
+    // Uses only the newly selected type when switching before a request starts.
+    func testSwitchingMediaTypeDuringThrottleSearchesOnlySeries() async {
+        let requestStarted = expectation(
+            description: "Series search started"
+        )
+        requestStarted.assertForOverFulfill = true
+
+        let provider = RecordingMovieSearchStub { _ in
+            requestStarted.fulfill()
+        }
+        let viewModel = MovieSearchViewModel(
+            moviesProvider: provider
+        )
+        defer { viewModel.cancelSearch() }
+
+        viewModel.updateQuery("Breaking Bad")
+        viewModel.selectMediaType(.series)
+
+        await fulfillment(
+            of: [requestStarted],
+            timeout: 3
+        )
+
+        let queries = await provider.requestedQueries
+        let mediaTypes = await provider.requestedMediaTypes
+
+        XCTAssertEqual(queries, ["Breaking Bad"])
+        XCTAssertEqual(mediaTypes, [.series])
+    }
 }
 
 // Records search parameters and returns a predefined result.
@@ -271,9 +301,10 @@ private actor MovieSearchStub: MovieSearchProviding {
     }
 
     // Records the query and page before returning the result.
-    func searchMovies(
+    func search(
         query: String,
-        page: Int
+        page: Int,
+        mediaType: MediaType
     ) async throws -> MoviePage {
         requestedQueries.append(query)
         requestedPages.append(page)
@@ -294,9 +325,10 @@ private actor ControlledMovieSearchStub: MovieSearchProviding {
     }
 
     // Suspends the request and tells the test it has started.
-    func searchMovies(
+    func search(
         query: String,
-        page: Int
+        page: Int,
+        mediaType: MediaType
     ) async throws -> MoviePage {
         try await withCheckedThrowingContinuation { continuation in
             pendingRequests[query] = continuation
@@ -325,17 +357,20 @@ private actor RecordingMovieSearchStub: MovieSearchProviding {
     private let onRequest: @Sendable (String) -> Void
 
     private(set) var requestedQueries: [String] = []
+    private(set) var requestedMediaTypes: [MediaType] = []
 
     init(onRequest: @escaping @Sendable (String) -> Void) {
         self.onRequest = onRequest
     }
 
     // Records the query and returns an empty results page.
-    func searchMovies(
+    func search(
         query: String,
-        page: Int
+        page: Int,
+        mediaType: MediaType
     ) async throws -> MoviePage {
         requestedQueries.append(query)
+        requestedMediaTypes.append(mediaType)
         onRequest(query)
 
         return MoviePage(

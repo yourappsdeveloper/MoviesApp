@@ -12,54 +12,92 @@ struct MovieSearchView: View {
     @Environment(\.dismiss) private var dismiss
 
     @State private var query = ""
-    @State private var navigationPath: [Int] = []
-    @State private var isSearchActive = true
+    @State private var navigationPath: [Movie] = []
+    @FocusState private var isSearchFocused: Bool
 
     let viewModel: MovieSearchViewModel
     let movieDetailsProvider: any MovieDetailsProviding
 
     var body: some View {
         NavigationStack(path: $navigationPath) {
-            content
-                .navigationTitle("Search")
-                .navigationBarTitleDisplayMode(.inline)
-                .searchable(
-                    text: $query,
-                    isPresented: $isSearchActive,
-                    prompt: "Search movies"
-                )
-                .onSubmit(of: .search) {
-                    isSearchActive = false
-                }
-                .toolbar {
-                    ToolbarItem(placement: .topBarTrailing) {
-                        Button("Done") {
-                            dismiss()
-                        }
+            ZStack {
+                content
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .safeAreaInset(edge: .top, spacing: 0) {
+                mediaTypePicker
+            }
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                searchBar
+            }
+            .navigationTitle("Search")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Done") {
+                        dismiss()
                     }
                 }
-                .toolbarBackground(
-                    AppTheme.navigationBackground,
-                    for: .navigationBar
+            }
+            .toolbarBackground(
+                AppTheme.navigationBackground,
+                for: .navigationBar
+            )
+            .toolbarBackground(.visible, for: .navigationBar)
+            .toolbarColorScheme(.dark, for: .navigationBar)
+            .navigationDestination(for: Movie.self) { movie in
+                MovieDetailsView(
+                    movieID: movie.id,
+                    mediaType: movie.mediaType,
+                    moviesProvider: movieDetailsProvider
                 )
-                .toolbarBackground(.visible, for: .navigationBar)
-                .toolbarColorScheme(.dark, for: .navigationBar)
-                .navigationDestination(for: Int.self) { movieID in
-                    MovieDetailsView(
-                        movieID: movieID,
-                        moviesProvider: movieDetailsProvider
-                    )
-                }
+            }
         }
         .tint(AppTheme.accent)
         .onChange(of: query) { _, newValue in
-            // Keep results when the system closes the search interface.
-            guard !newValue.isEmpty || isSearchActive else {
-                return
-            }
-
             viewModel.updateQuery(newValue)
         }
+    }
+
+    // Keeps the query when dismissing the keyboard.
+    private var searchBar: some View {
+        HStack(spacing: 12) {
+            HStack(spacing: 10) {
+                Image(systemName: "magnifyingglass")
+                    .foregroundStyle(.secondary)
+
+                TextField(
+                    viewModel.mediaType == .movie
+                        ? "Search movies"
+                        : "Search series",
+                    text: $query
+                )
+                .focused($isSearchFocused)
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled()
+                .submitLabel(.search)
+                .onSubmit {
+                    isSearchFocused = false
+                }
+                .accessibilityIdentifier("movie-search-field")
+            }
+            .padding(.horizontal, 16)
+            .frame(minHeight: 50)
+            .background(.regularMaterial, in: Capsule())
+
+            Button {
+                isSearchFocused = false
+            } label: {
+                Image(systemName: "xmark")
+                    .font(.title2)
+                    .frame(width: 50, height: 50)
+                    .background(.regularMaterial, in: Circle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Hide keyboard")
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 8)
     }
 
     @ViewBuilder
@@ -82,9 +120,11 @@ struct MovieSearchView: View {
 
     private var promptView: some View {
         ContentUnavailableView(
-            "Search Movies",
+            viewModel.mediaType == .movie
+                ? "Search Movies"
+                : "Search Series",
             systemImage: "magnifyingglass",
-            description: Text("Enter a movie title to start searching.")
+            description: Text("Choose Movies or Series, then enter a title.")
         )
     }
 
@@ -104,10 +144,30 @@ struct MovieSearchView: View {
             movies: movies,
             onNearEnd: {},
             onSelectMovie: { movie in
-                navigationPath.append(movie.id)
+                navigationPath.append(movie)
             }
         )
         .accessibilityIdentifier("search-results")
+    }
+
+    // Selects the content type before searching.
+    private var mediaTypePicker: some View {
+        Picker(
+            "Content type",
+            selection: Binding(
+                get: { viewModel.mediaType },
+                set: { viewModel.selectMediaType($0) }
+            )
+        ) {
+            ForEach(MediaType.allCases, id: \.self) { mediaType in
+                Text(mediaType == .movie ? "Movies" : "Series")
+                    .tag(mediaType)
+            }
+        }
+        .pickerStyle(.segmented)
+        .accessibilityIdentifier("search-media-type")
+        .padding()
+        .background(.background)
     }
 
     // Shows a failed search with an explicit retry action.

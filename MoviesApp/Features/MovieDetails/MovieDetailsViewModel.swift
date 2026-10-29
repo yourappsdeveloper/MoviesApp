@@ -21,6 +21,8 @@ final class MovieDetailsViewModel {
 
     private(set) var state: State = .idle
 
+    let mediaType: MediaType
+
     private let movieID: Int
     private let moviesProvider: any MovieDetailsProviding
 
@@ -46,9 +48,11 @@ final class MovieDetailsViewModel {
 
     init(
         movieID: Int,
+        mediaType: MediaType = .movie,
         moviesProvider: any MovieDetailsProviding
     ) {
         self.movieID = movieID
+        self.mediaType = mediaType
         self.moviesProvider = moviesProvider
     }
 
@@ -68,8 +72,9 @@ final class MovieDetailsViewModel {
         state = .loading
 
         do {
-            let movie = try await moviesProvider.fetchMovieDetails(
-                id: movieID
+            let movie = try await moviesProvider.fetchDetails(
+                id: movieID,
+                mediaType: mediaType
             )
 
             try Task.checkCancellation()

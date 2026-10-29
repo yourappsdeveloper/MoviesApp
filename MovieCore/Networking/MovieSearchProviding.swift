@@ -6,8 +6,9 @@
 //
 
 public protocol MovieSearchProviding: Sendable {
-    func searchMovies(
+    func search(
         query: String,
-        page: Int
+        page: Int,
+        mediaType: MediaType
     ) async throws -> MoviePage
 }

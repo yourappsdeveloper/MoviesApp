@@ -33,7 +33,10 @@ struct UITestMoviesProvider:
     }
 
     // Returns details for the movie used by the navigation tests.
-    func fetchMovieDetails(id: Int) async throws -> MovieDetails {
+    func fetchDetails(
+        id: Int,
+        mediaType: MediaType
+    ) async throws -> MovieDetails {
         try Task.checkCancellation()
 
         return MovieDetails(
@@ -50,9 +53,10 @@ struct UITestMoviesProvider:
     }
 
     // Matches the sample movie against the entered title.
-    func searchMovies(
+    func search(
         query: String,
-        page: Int
+        page: Int,
+        mediaType: MediaType
     ) async throws -> MoviePage {
         try Task.checkCancellation()
 

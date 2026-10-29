@@ -15,6 +15,9 @@ public struct MovieDetails: Identifiable, Sendable {
     public let runtime: Int?
     public let voteAverage: Double
     public let voteCount: Int
+    public let mediaType: MediaType
+    public let numberOfSeasons: Int?
+    public let numberOfEpisodes: Int?
 
     public init(
         id: Int,
@@ -25,7 +28,10 @@ public struct MovieDetails: Identifiable, Sendable {
         releaseDate: String?,
         runtime: Int?,
         voteAverage: Double,
-        voteCount: Int
+        voteCount: Int,
+        mediaType: MediaType = .movie,
+        numberOfSeasons: Int? = nil,
+        numberOfEpisodes: Int? = nil
     ) {
         self.id = id
         self.title = title
@@ -36,5 +42,8 @@ public struct MovieDetails: Identifiable, Sendable {
         self.runtime = runtime
         self.voteAverage = voteAverage
         self.voteCount = voteCount
+        self.mediaType = mediaType
+        self.numberOfSeasons = numberOfSeasons
+        self.numberOfEpisodes = numberOfEpisodes
     }
 }
