@@ -107,6 +107,81 @@ final class MovieSearchViewModelTests: XCTestCase {
             posterPath: "/poster.jpg"
         )
     }
+    
+    // Keeps the latest results when an older request finishes afterward.
+    func testOlderResponseDoesNotReplaceLatestResults() async {
+        let firstRequestStarted = expectation(
+            description: "First request started"
+        )
+        let secondRequestStarted = expectation(
+            description: "Second request started"
+        )
+
+        let provider = ControlledMovieSearchStub { query in
+            switch query {
+            case "Interstellar":
+                firstRequestStarted.fulfill()
+            case "Alien":
+                secondRequestStarted.fulfill()
+            default:
+                break
+            }
+        }
+
+        let viewModel = MovieSearchViewModel(
+            moviesProvider: provider
+        )
+        let olderMovie = makeMovie()
+        let latestMovie = Movie(
+            id: 348,
+            title: "Alien",
+            overview: "A crew encounters an alien.",
+            posterPath: nil
+        )
+
+        let firstTask = Task {
+            await viewModel.search(query: "Interstellar")
+        }
+
+        await fulfillment(
+            of: [firstRequestStarted],
+            timeout: 2
+        )
+
+        let secondTask = Task {
+            await viewModel.search(query: "Alien")
+        }
+
+        await fulfillment(
+            of: [secondRequestStarted],
+            timeout: 2
+        )
+
+        await provider.complete(
+            query: "Alien",
+            movies: [latestMovie]
+        )
+        await secondTask.value
+
+        if case .loaded(let latestResults) = viewModel.state {
+            XCTAssertEqual(latestResults, [latestMovie])
+        } else {
+            XCTFail("Expected the latest search results.")
+        }
+
+        await provider.complete(
+            query: "Interstellar",
+            movies: [olderMovie]
+        )
+        await firstTask.value
+
+        guard case .loaded(let finalResults) = viewModel.state else {
+            XCTFail("Expected search results to remain loaded.")
+            return
+        }
+
+        XCTAssertEqual(finalResults, [latestMovie])
+    }
 }
 
 // Records search parameters and returns a predefined result.
@@ -128,6 +203,45 @@ private actor MovieSearchStub: MovieSearchProviding {
         requestedQueries.append(query)
         requestedPages.append(page)
         return try result.get()
+    }
+}
+
+// Holds requests until the test explicitly completes them.
+private actor ControlledMovieSearchStub: MovieSearchProviding {
+    private let onRequest: @Sendable (String) -> Void
+
+    private var pendingRequests: [
+        String: CheckedContinuation<MoviePage, any Error>
+    ] = [:]
+
+    init(onRequest: @escaping @Sendable (String) -> Void) {
+        self.onRequest = onRequest
+    }
+
+    // Suspends the request and tells the test it has started.
+    func searchMovies(
+        query: String,
+        page: Int
+    ) async throws -> MoviePage {
+        try await withCheckedThrowingContinuation { continuation in
+            pendingRequests[query] = continuation
+            onRequest(query)
+        }
+    }
+
+    // Resumes a pending request with the supplied movies.
+    func complete(query: String, movies: [Movie]) {
+        let continuation = pendingRequests.removeValue(
+            forKey: query
+        )
+
+        continuation?.resume(
+            returning: MoviePage(
+                page: 1,
+                totalPages: 1,
+                movies: movies
+            )
+        )
     }
 }
 
