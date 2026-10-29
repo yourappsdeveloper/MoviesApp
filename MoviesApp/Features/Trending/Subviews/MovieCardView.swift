@@ -11,6 +11,8 @@ import MovieCore
 
 /// Shows a movie poster, title, and short overview.
 struct MovieCardView: View {
+    
+    @Environment(\.displayScale) private var displayScale
     let movie: Movie
 
     var body: some View {
@@ -33,11 +35,40 @@ struct MovieCardView: View {
             .fill(Color(uiColor: .systemGray5))
             .aspectRatio(2.0 / 3.0, contentMode: .fit)
             .overlay {
-                Image(systemName: "photo")
-                    .font(.system(size: 32))
-                    .foregroundStyle(.secondary)
+                GeometryReader { geometry in
+                    posterImage(size: geometry.size)
+                }
             }
+            .clipped()
             .accessibilityHidden(true)
+    }
+
+    private func posterImage(size: CGSize) -> some View {
+        AsyncImage(
+            url: TMDBImageURL.poster(
+                path: movie.posterPath,
+                width: Double(size.width),
+                scale: Double(displayScale)
+            ),
+            scale: displayScale
+        ) { phase in
+            if let image = phase.image {
+                image
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: size.width, height: size.height)
+                    .clipped()
+            } else {
+                posterPlaceholder
+                    .frame(width: size.width, height: size.height)
+            }
+        }
+    }
+
+    private var posterPlaceholder: some View {
+        Image(systemName: "photo")
+            .font(.system(size: 32))
+            .foregroundStyle(.secondary)
     }
 
     private var details: some View {
@@ -70,7 +101,7 @@ struct MovieCardView: View {
             id: 157336,
             title: "Interstellar",
             overview: "A team of explorers travels beyond this galaxy.",
-            posterPath: nil
+            posterPath: "/1E5baAaEse26fej7uHcjOgEE2t2.jpg"
         )
     )
     .frame(width: 180)
