@@ -182,6 +182,66 @@ final class MovieSearchViewModelTests: XCTestCase {
 
         XCTAssertEqual(finalResults, [latestMovie])
     }
+    
+    // Searches only the latest query received during the throttle window.
+    func testThrottlingSearchesLatestQuery() async {
+        let requestStarted = expectation(
+            description: "Search request started"
+        )
+        requestStarted.assertForOverFulfill = true
+
+        let provider = RecordingMovieSearchStub { _ in
+            requestStarted.fulfill()
+        }
+        let viewModel = MovieSearchViewModel(
+            moviesProvider: provider
+        )
+        defer { viewModel.cancelSearch() }
+
+        viewModel.updateQuery("B")
+        viewModel.updateQuery("Bat")
+        viewModel.updateQuery("Batman")
+
+        await fulfillment(
+            of: [requestStarted],
+            timeout: 3
+        )
+
+        let queries = await provider.requestedQueries
+        XCTAssertEqual(queries, ["Batman"])
+    }
+
+    // Cancels the pending search when the user clears the field.
+    func testClearingQueryCancelsPendingSearch() async {
+        let unexpectedRequest = expectation(
+            description: "No search request should start"
+        )
+        unexpectedRequest.isInverted = true
+
+        let provider = RecordingMovieSearchStub { _ in
+            unexpectedRequest.fulfill()
+        }
+        let viewModel = MovieSearchViewModel(
+            moviesProvider: provider
+        )
+        defer { viewModel.cancelSearch() }
+
+        viewModel.updateQuery("Batman")
+        viewModel.updateQuery("")
+
+        guard case .idle = viewModel.state else {
+            XCTFail("Expected idle state after clearing the query.")
+            return
+        }
+
+        await fulfillment(
+            of: [unexpectedRequest],
+            timeout: 1
+        )
+
+        let queries = await provider.requestedQueries
+        XCTAssertTrue(queries.isEmpty)
+    }
 }
 
 // Records search parameters and returns a predefined result.
@@ -241,6 +301,32 @@ private actor ControlledMovieSearchStub: MovieSearchProviding {
                 totalPages: 1,
                 movies: movies
             )
+        )
+    }
+}
+
+// Records searches and notifies the test when a request starts.
+private actor RecordingMovieSearchStub: MovieSearchProviding {
+    private let onRequest: @Sendable (String) -> Void
+
+    private(set) var requestedQueries: [String] = []
+
+    init(onRequest: @escaping @Sendable (String) -> Void) {
+        self.onRequest = onRequest
+    }
+
+    // Records the query and returns an empty results page.
+    func searchMovies(
+        query: String,
+        page: Int
+    ) async throws -> MoviePage {
+        requestedQueries.append(query)
+        onRequest(query)
+
+        return MoviePage(
+            page: page,
+            totalPages: 1,
+            movies: []
         )
     }
 }
