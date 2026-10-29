@@ -12,9 +12,20 @@ import SwiftUI
 struct MovieDetailsView: View {
     @Environment(\.displayScale) private var displayScale
     @State private var retryCount = 0
+    @State private var viewModel: MovieDetailsViewModel
 
-    let viewModel: MovieDetailsViewModel
-
+    init(
+        movieID: Int,
+        moviesProvider: any MovieDetailsProviding
+    ) {
+        _viewModel = State(
+            initialValue: MovieDetailsViewModel(
+                movieID: movieID,
+                moviesProvider: moviesProvider
+            )
+        )
+    }
+    
     var body: some View {
         content
             .navigationTitle("Movie Details")
@@ -57,7 +68,8 @@ struct MovieDetailsView: View {
                     .accessibilityAddTraits(.isHeader)
 
                 ratingView(movie)
-
+                releaseDateView
+                
                 if let runtime = movie.runtime, runtime > 0 {
                     Label("\(runtime) min", systemImage: "clock")
                         .font(.subheadline)
@@ -104,6 +116,27 @@ struct MovieDetailsView: View {
                 .foregroundStyle(.secondary)
         }
         .font(.subheadline)
+    }
+    
+    private var releaseDateView: some View {
+        Group {
+            if let date = viewModel.releaseDate {
+                Label {
+                    Text(
+                        date,
+                        format: Date.FormatStyle(
+                            date: .abbreviated,
+                            time: .omitted,
+                            timeZone: .gmt
+                        )
+                    )
+                } icon: {
+                    Image(systemName: "calendar")
+                }
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+            }
+        }
     }
 
     private func overviewView(_ overview: String) -> some View {

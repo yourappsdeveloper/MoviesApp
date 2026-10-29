@@ -15,9 +15,13 @@ struct MoviesCollectionView: UIViewRepresentable {
     
     let movies: [Movie]
     let onNearEnd: @MainActor () async -> Void
+    let onSelectMovie: @MainActor (Movie) -> Void
     
     func makeCoordinator() -> Coordinator {
-        Coordinator(onNearEnd: onNearEnd)
+        Coordinator(
+            onNearEnd: onNearEnd,
+            onSelectMovie: onSelectMovie
+        )
     }
 
     func makeUIView(context: Context) -> UICollectionView {
@@ -47,7 +51,8 @@ struct MoviesCollectionView: UIViewRepresentable {
     ) {
         let coordinator = context.coordinator
         coordinator.onNearEnd = onNearEnd
-
+        coordinator.onSelectMovie = onSelectMovie
+        
         guard coordinator.movies != movies else {
             return
         }
@@ -155,9 +160,14 @@ struct MoviesCollectionView: UIViewRepresentable {
         var movies: [Movie] = []
         var onNearEnd: @MainActor () async -> Void
         var paginationTask: Task<Void, Never>?
-
-        init(onNearEnd: @escaping @MainActor () async -> Void) {
+        var onSelectMovie: @MainActor (Movie) -> Void
+        
+        init(
+            onNearEnd: @escaping @MainActor () async -> Void,
+            onSelectMovie: @escaping @MainActor (Movie) -> Void
+        ) {
             self.onNearEnd = onNearEnd
+            self.onSelectMovie = onSelectMovie
             super.init()
         }
         
@@ -208,6 +218,15 @@ struct MoviesCollectionView: UIViewRepresentable {
                 await onNearEnd()
                 paginationTask = nil
             }
+        }
+        
+        // Opens the movie selected by the user.
+        func collectionView(
+            _ collectionView: UICollectionView,
+            didSelectItemAt indexPath: IndexPath
+        ) {
+            collectionView.deselectItem(at: indexPath, animated: false)
+            onSelectMovie(movies[indexPath.item])
         }
     }
 }

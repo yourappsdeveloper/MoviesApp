@@ -10,14 +10,23 @@ import SwiftUI
 import MovieCore
 
 struct TrendingView: View {
+    
     let viewModel: TrendingViewModel
+    let movieDetailsProvider: any MovieDetailsProviding
 
     @State private var retryCount = 0
-
+    @State private var navigationPath: [Int] = []
+    
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $navigationPath) {
             content
                 .navigationTitle("Trending")
+                .navigationDestination(for: Int.self) { movieID in
+                    MovieDetailsView(
+                        movieID: movieID,
+                        moviesProvider: movieDetailsProvider
+                    )
+                }
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbarBackground(
                     AppTheme.navigationBackground,
@@ -93,9 +102,15 @@ struct TrendingView: View {
     }
 
     private func moviesList(_ movies: [Movie]) -> some View {
-        MoviesCollectionView(movies: movies) {
-            await viewModel.loadNextPage()
-        }
+        MoviesCollectionView(
+            movies: movies,
+            onNearEnd: {
+                await viewModel.loadNextPage()
+            },
+            onSelectMovie: { movie in
+                navigationPath.append(movie.id)
+            }
+        )
         .safeAreaInset(edge: .bottom, spacing: 0) {
             paginationFooter
         }

@@ -12,6 +12,7 @@ import MovieCore
 @main
 struct MoviesAppApp: App {
     @State private var trendingViewModel: TrendingViewModel?
+    private let movieDetailsProvider: (any MovieDetailsProviding)?
     
     init() {
         let token = ProcessInfo.processInfo.environment["TMDB_READ_ACCESS_TOKEN"]?
@@ -20,15 +21,21 @@ struct MoviesAppApp: App {
         if let token, !token.isEmpty {
             let client = TMDBClient(token: token)
             _trendingViewModel = State(initialValue: TrendingViewModel(moviesProvider: client))
+            movieDetailsProvider = client
         } else {
             _trendingViewModel = State(initialValue: nil)
+            movieDetailsProvider = nil
         }
     }
     
     var body: some Scene {
         WindowGroup {
-            if let trendingViewModel {
-                TrendingView(viewModel: trendingViewModel)
+            if let trendingViewModel,
+               let movieDetailsProvider {
+                TrendingView(
+                    viewModel: trendingViewModel,
+                    movieDetailsProvider: movieDetailsProvider
+                )
             } else {
                 ContentUnavailableView("Configuration unavailable",
                                        systemImage: "gearshape",

@@ -8,6 +8,7 @@
 
 import MovieCore
 import Observation
+import Foundation
 
 @MainActor
 @Observable
@@ -23,6 +24,26 @@ final class MovieDetailsViewModel {
 
     private let movieID: Int
     private let moviesProvider: any MovieDetailsProviding
+    
+    private static let releaseDateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.calendar = Calendar(identifier: .gregorian)
+        formatter.timeZone = .gmt
+        formatter.dateFormat = "yyyy-MM-dd"
+        formatter.isLenient = false
+        return formatter
+    }()
+    
+    // Converts the loaded movie's release date into a date value.
+    var releaseDate: Date? {
+        guard case .loaded(let movie) = state,
+              let value = movie.releaseDate else {
+            return nil
+        }
+
+        return Self.releaseDateFormatter.date(from: value)
+    }
 
     init(
         movieID: Int,
