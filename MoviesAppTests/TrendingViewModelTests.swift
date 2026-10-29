@@ -211,6 +211,49 @@ final class TrendingViewModelTests: XCTestCase {
             return
         }
     }
+    
+    // Stops pagination when the API returns an empty page.
+    func testLoadNextPageStopsAfterEmptyPage() async {
+        let firstMovie = makeMovie(id: 1)
+        let provider = TrendingMoviesStub(
+            pages: [
+                .success(
+                    MoviePage(
+                        page: 1,
+                        totalPages: 3,
+                        movies: [firstMovie]
+                    )
+                ),
+                .success(
+                    MoviePage(
+                        page: 2,
+                        totalPages: 3,
+                        movies: []
+                    )
+                )
+            ]
+        )
+        let viewModel = TrendingViewModel(moviesProvider: provider)
+
+        await viewModel.load()
+        await viewModel.loadNextPage()
+        await viewModel.loadNextPage()
+
+        guard case .loaded(let movies) = viewModel.state else {
+            XCTFail("Expected loaded movies.")
+            return
+        }
+
+        XCTAssertEqual(movies, [firstMovie])
+
+        let requestedPages = await provider.requestedPages
+        XCTAssertEqual(requestedPages, [1, 2])
+
+        guard case .idle = viewModel.nextPageState else {
+            XCTFail("Expected idle pagination state.")
+            return
+        }
+    }
 }
 
 /// Returns prepared pages and records which pages were requested.
