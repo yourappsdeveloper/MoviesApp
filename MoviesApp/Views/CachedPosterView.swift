@@ -8,6 +8,7 @@
 import Foundation
 import SwiftUI
 import UIKit
+import MovieCore
 
 /// Displays cached posters immediately and downloads missing ones.
 @MainActor
@@ -65,13 +66,9 @@ struct CachedPosterView: View {
         }
 
         do {
-            let (data, response) = try await URLSession.shared.data(
-                from: url
-            )
+            let data = try await AppStorage.imageLoader.data(for: url)
 
-            guard let response = response as? HTTPURLResponse,
-                  (200..<300).contains(response.statusCode),
-                  let image = UIImage(data: data) else {
+            guard let image = UIImage(data: data) else {
                 return
             }
 

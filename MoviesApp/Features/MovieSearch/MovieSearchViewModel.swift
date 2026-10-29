@@ -21,6 +21,7 @@ final class MovieSearchViewModel {
     }
 
     private(set) var state: State = .idle
+    private(set) var isShowingSavedData = false
 
     private let moviesProvider: any MovieSearchProviding
     private var currentRequestID = UUID()
@@ -56,6 +57,7 @@ final class MovieSearchViewModel {
             return
         }
 
+        isShowingSavedData = false
         latestQuery = trimmedQuery
 
         currentRequestID = UUID()
@@ -125,11 +127,13 @@ final class MovieSearchViewModel {
         searchTask = nil
 
         latestQuery = ""
+        isShowingSavedData = false
         state = .idle
     }
 
     // Searches movies and publishes only the latest request's result.
     func search(query: String) async {
+        isShowingSavedData = false
         let requestID = UUID()
         currentRequestID = requestID
 
@@ -162,6 +166,7 @@ final class MovieSearchViewModel {
                 return
             }
 
+            isShowingSavedData = result.isFromCache
             state = .loaded(result.movies)
         } catch {
             guard currentRequestID == requestID else {

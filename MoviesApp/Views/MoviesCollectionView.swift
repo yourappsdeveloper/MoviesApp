@@ -12,6 +12,7 @@ import MovieCore
 /// Displays SwiftUI movie cards inside a UIKit collection view.
 struct MoviesCollectionView: UIViewRepresentable {
 
+    @Environment(FavoritesViewModel.self) private var favorites
     let movies: [Movie]
     let onNearEnd: @MainActor () async -> Void
     let onSelectMovie: @MainActor (Movie) -> Void
@@ -49,6 +50,7 @@ struct MoviesCollectionView: UIViewRepresentable {
         context: Context
     ) {
         let coordinator = context.coordinator
+        coordinator.favorites = favorites
         coordinator.onNearEnd = onNearEnd
         coordinator.onSelectMovie = onSelectMovie
 
@@ -156,6 +158,7 @@ struct MoviesCollectionView: UIViewRepresentable {
 
         static let cellIdentifier = "MovieCell"
 
+        var favorites: FavoritesViewModel?
         var movies: [Movie] = []
         var onNearEnd: @MainActor () async -> Void
         var paginationTask: Task<Void, Never>?
@@ -189,9 +192,13 @@ struct MoviesCollectionView: UIViewRepresentable {
             )
             let movie = movies[indexPath.item]
 
+            let favorites = favorites
             cell.contentConfiguration = UIHostingConfiguration {
-                MovieCardView(movie: movie)
-                    .id(movie.id)
+                if let favorites {
+                    MovieCardView(movie: movie)
+                        .environment(favorites)
+                        .id(movie)
+                }
             }
             .margins(.all, 0)
 

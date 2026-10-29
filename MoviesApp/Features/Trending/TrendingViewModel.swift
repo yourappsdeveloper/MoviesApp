@@ -19,6 +19,7 @@ final class TrendingViewModel {
     }
 
     private(set) var state: State = .idle
+    private(set) var isShowingSavedData = false
     private(set) var nextPageState: NextPageState = .idle
 
     private let moviesProvider: any TrendingMoviesProviding
@@ -44,6 +45,7 @@ final class TrendingViewModel {
             return
         }
 
+        isShowingSavedData = false
         state = .loading
 
         do {
@@ -59,6 +61,7 @@ final class TrendingViewModel {
             totalPages = result.totalPages
             reachedEnd = result.movies.isEmpty
 
+            isShowingSavedData = result.isFromCache
             state = .loaded(uniqueMovies(result.movies))
         } catch {
             if Task.isCancelled || error is CancellationError {
@@ -108,6 +111,7 @@ final class TrendingViewModel {
             totalPages = result.totalPages
             reachedEnd = updatedMovies.count == movies.count
 
+            isShowingSavedData = isShowingSavedData || result.isFromCache
             state = .loaded(updatedMovies)
         } catch {
             guard !Task.isCancelled,

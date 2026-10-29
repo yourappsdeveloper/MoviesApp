@@ -5,7 +5,7 @@
 //  Created by Alex  on 28.10.2026.
 //
 
-public struct Movie: Identifiable, Sendable, Hashable {
+public struct Movie: Identifiable, Codable, Sendable, Hashable {
     public let id: Int
     public let title: String
     public let overview: String

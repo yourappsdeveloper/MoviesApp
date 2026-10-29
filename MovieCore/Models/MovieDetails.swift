@@ -5,7 +5,8 @@
 //  Created by Alex  on 29.10.2026.
 //
 
-public struct MovieDetails: Identifiable, Sendable {
+public struct MovieDetails: Identifiable, Codable, Sendable {
+    public var isFromCache = false
     public let id: Int
     public let title: String
     public let overview: String

@@ -6,7 +6,8 @@
 //
 
 /// A page of movies and the information needed to load the next one.
-public struct MoviePage: Sendable {
+public struct MoviePage: Codable, Sendable {
+    public var isFromCache = false
     public let page: Int
     public let totalPages: Int
     public let movies: [Movie]

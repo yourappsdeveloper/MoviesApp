@@ -6,7 +6,7 @@
 //
 
 /// Identifies the content type used for search and details.
-public enum MediaType: String, CaseIterable, Hashable, Sendable {
+public enum MediaType: String, CaseIterable, Codable, Hashable, Sendable {
     case movie
     case series = "tv"
 }

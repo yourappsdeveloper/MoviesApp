@@ -32,6 +32,9 @@ struct UITestMoviesProvider:
 
     func fetchTrendingMovies(page: Int) async throws -> MoviePage {
         try Task.checkCancellation()
+        if ProcessInfo.processInfo.arguments.contains("-ui-testing-offline") {
+            throw URLError(.notConnectedToInternet)
+        }
 
         return MoviePage(
             page: page,
@@ -46,6 +49,9 @@ struct UITestMoviesProvider:
         mediaType: MediaType
     ) async throws -> MoviePage {
         try Task.checkCancellation()
+        if ProcessInfo.processInfo.arguments.contains("-ui-testing-offline") {
+            throw URLError(.notConnectedToInternet)
+        }
 
         let item = mediaType == .movie ? movie : series
         let matches = item.title.localizedCaseInsensitiveContains(query)
@@ -62,6 +68,9 @@ struct UITestMoviesProvider:
         mediaType: MediaType
     ) async throws -> MovieDetails {
         try Task.checkCancellation()
+        if ProcessInfo.processInfo.arguments.contains("-ui-testing-offline") {
+            throw URLError(.notConnectedToInternet)
+        }
 
         let item = mediaType == .movie ? movie : series
 
