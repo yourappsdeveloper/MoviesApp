@@ -8,7 +8,7 @@
 
 import Foundation
 
-public struct TMDBClient: TrendingMoviesProviding, MovieDetailsProviding {
+public struct TMDBClient: TrendingMoviesProviding, MovieDetailsProviding, MovieSearchProviding {
     
     private let token: String
     private let session: URLSession
@@ -127,11 +127,83 @@ public struct TMDBClient: TrendingMoviesProviding, MovieDetailsProviding {
 
         return dto.toDomain()
     }
+    
+    // Searches movies by title and returns one page of results.
+    public func searchMovies(
+        query: String,
+        page: Int
+    ) async throws -> MoviePage {
+        let trimmedQuery = query.trimmingCharacters(
+            in: .whitespacesAndNewlines
+        )
+
+        guard !trimmedQuery.isEmpty else {
+            throw TMDBError.emptySearchQuery
+        }
+
+        guard page > 0 else {
+            throw TMDBError.invalidPage
+        }
+
+        try Task.checkCancellation()
+
+        guard var components = URLComponents(
+            string: "https://api.themoviedb.org/3/search/movie"
+        ) else {
+            throw TMDBError.invalidURL
+        }
+
+        components.queryItems = [
+            URLQueryItem(name: "query", value: trimmedQuery),
+            URLQueryItem(name: "page", value: String(page)),
+            URLQueryItem(name: "include_adult", value: "false")
+        ]
+
+        guard let url = components.url else {
+            throw TMDBError.invalidURL
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.timeoutInterval = 30
+        request.setValue(
+            "Bearer \(token)",
+            forHTTPHeaderField: "Authorization"
+        )
+        request.setValue(
+            "application/json",
+            forHTTPHeaderField: "Accept"
+        )
+
+        let (data, response) = try await session.data(for: request)
+
+        guard let response = response as? HTTPURLResponse else {
+            throw TMDBError.invalidResponse
+        }
+
+        guard (200..<300).contains(response.statusCode) else {
+            throw TMDBError.httpStatus(response.statusCode)
+        }
+
+        try Task.checkCancellation()
+
+        let result = try JSONDecoder().decode(
+            PaginatedResponse<MovieDTO>.self,
+            from: data
+        )
+
+        return MoviePage(
+            page: result.page,
+            totalPages: result.totalPages,
+            movies: result.results.map { $0.toDomain() }
+        )
+    }
 }
 
 public enum TMDBError: Error {
     case invalidURL
     case invalidMovieID
+    case emptySearchQuery
     case invalidPage
     case invalidResponse
     case httpStatus(Int)
