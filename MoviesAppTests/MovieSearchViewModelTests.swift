@@ -242,6 +242,42 @@ final class MovieSearchViewModelTests: XCTestCase {
         let queries = await provider.requestedQueries
         XCTAssertTrue(queries.isEmpty)
     }
+    
+    // Ignores a response returned after the search task was cancelled.
+    func testCancelledSearchDoesNotPublishResults() async {
+        let requestStarted = expectation(
+            description: "Search request started"
+        )
+
+        let provider = ControlledMovieSearchStub { _ in
+            requestStarted.fulfill()
+        }
+        let viewModel = MovieSearchViewModel(
+            moviesProvider: provider
+        )
+
+        let searchTask = Task {
+            await viewModel.search(query: "Interstellar")
+        }
+
+        await fulfillment(
+            of: [requestStarted],
+            timeout: 2
+        )
+
+        searchTask.cancel()
+
+        await provider.complete(
+            query: "Interstellar",
+            movies: [makeMovie()]
+        )
+        await searchTask.value
+
+        guard case .idle = viewModel.state else {
+            XCTFail("Expected idle state after cancellation.")
+            return
+        }
+    }
 }
 
 // Records search parameters and returns a predefined result.
