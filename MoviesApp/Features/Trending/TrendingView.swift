@@ -61,9 +61,44 @@ struct TrendingView: View {
             description: Text("Please check again later.")
         )
     }
+    
+    @ViewBuilder
+    private var paginationFooter: some View {
+        switch viewModel.nextPageState {
+        case .idle:
+            EmptyView()
+
+        case .loading:
+            ProgressView()
+                .frame(maxWidth: .infinity)
+                .padding()
+                .background(.background)
+
+        case .failed(let message):
+            VStack(spacing: 8) {
+                Text(message)
+                    .font(.footnote)
+                    .multilineTextAlignment(.center)
+
+                Button("Try Again") {
+                    Task {
+                        await viewModel.retryNextPage()
+                    }
+                }
+            }
+            .frame(maxWidth: .infinity)
+            .padding()
+            .background(.background)
+        }
+    }
 
     private func moviesList(_ movies: [Movie]) -> some View {
-        MoviesCollectionView(movies: movies)
+        MoviesCollectionView(movies: movies) {
+            await viewModel.loadNextPage()
+        }
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            paginationFooter
+        }
     }
 
     private func errorView(message: String) -> some View {

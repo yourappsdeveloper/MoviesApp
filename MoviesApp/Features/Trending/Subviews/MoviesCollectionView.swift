@@ -12,10 +12,12 @@ import MovieCore
 
 /// Displays SwiftUI movie cards inside a UIKit collection view.
 struct MoviesCollectionView: UIViewRepresentable {
+    
     let movies: [Movie]
-
+    let onNearEnd: @MainActor () async -> Void
+    
     func makeCoordinator() -> Coordinator {
-        Coordinator()
+        Coordinator(onNearEnd: onNearEnd)
     }
 
     func makeUIView(context: Context) -> UICollectionView {
@@ -34,7 +36,8 @@ struct MoviesCollectionView: UIViewRepresentable {
             forCellWithReuseIdentifier: Coordinator.cellIdentifier
         )
         collectionView.dataSource = context.coordinator
-
+        collectionView.delegate = context.coordinator
+        
         return collectionView
     }
 
@@ -42,12 +45,34 @@ struct MoviesCollectionView: UIViewRepresentable {
         _ collectionView: UICollectionView,
         context: Context
     ) {
-        guard context.coordinator.movies != movies else {
+        let coordinator = context.coordinator
+        coordinator.onNearEnd = onNearEnd
+
+        guard coordinator.movies != movies else {
             return
         }
 
-        context.coordinator.movies = movies
-        collectionView.reloadData()
+        let oldCount = coordinator.movies.count
+
+        let isAppending = movies.count > oldCount
+            && coordinator.movies.elementsEqual(movies.prefix(oldCount))
+
+        guard isAppending, oldCount > 0 else {
+            coordinator.movies = movies
+            collectionView.reloadData()
+            return
+        }
+
+        let newIndexPaths = (oldCount..<movies.count).map {
+            IndexPath(item: $0, section: 0)
+        }
+
+        UIView.performWithoutAnimation {
+            collectionView.performBatchUpdates {
+                coordinator.movies = movies
+                collectionView.insertItems(at: newIndexPaths)
+            }
+        }
     }
 
     /// Adapts the column count to the available width and text size.
@@ -109,13 +134,33 @@ struct MoviesCollectionView: UIViewRepresentable {
             return section
         }
     }
+    
+    /// Cancels pagination when the collection view is removed.
+    static func dismantleUIView(
+        _ collectionView: UICollectionView,
+        coordinator: Coordinator
+    ) {
+        coordinator.paginationTask?.cancel()
+        collectionView.delegate = nil
+        collectionView.dataSource = nil
+    }
 
     @MainActor
-    final class Coordinator: NSObject, UICollectionViewDataSource {
+    final class Coordinator: NSObject,
+                             UICollectionViewDataSource,
+                             UICollectionViewDelegate {
+
         static let cellIdentifier = "MovieCell"
 
         var movies: [Movie] = []
+        var onNearEnd: @MainActor () async -> Void
+        var paginationTask: Task<Void, Never>?
 
+        init(onNearEnd: @escaping @MainActor () async -> Void) {
+            self.onNearEnd = onNearEnd
+            super.init()
+        }
+        
         /// Returns the number of movies currently displayed.
         func collectionView(
             _ collectionView: UICollectionView,
@@ -142,6 +187,27 @@ struct MoviesCollectionView: UIViewRepresentable {
             .margins(.all, 0)
 
             return cell
+        }
+        
+        /// Starts loading before the user reaches the last few cards.
+        func collectionView(
+            _ collectionView: UICollectionView,
+            willDisplay cell: UICollectionViewCell,
+            forItemAt indexPath: IndexPath
+        ) {
+            guard indexPath.item >= max(0, movies.count - 6),
+                  paginationTask == nil else {
+                return
+            }
+
+            paginationTask = Task { [weak self] in
+                guard let self else {
+                    return
+                }
+
+                await onNearEnd()
+                paginationTask = nil
+            }
         }
     }
 }
