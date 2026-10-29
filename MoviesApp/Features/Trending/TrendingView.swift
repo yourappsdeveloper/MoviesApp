@@ -13,7 +13,9 @@ struct TrendingView: View {
     
     let viewModel: TrendingViewModel
     let movieDetailsProvider: any MovieDetailsProviding
+    let searchViewModel: MovieSearchViewModel
 
+    @State private var isSearchPresented = false
     @State private var retryCount = 0
     @State private var navigationPath: [Int] = []
     
@@ -32,12 +34,28 @@ struct TrendingView: View {
                     AppTheme.navigationBackground,
                     for: .navigationBar
                 )
+                .toolbar {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        searchButton
+                    }
+                }
                 .toolbarBackground(.visible, for: .navigationBar)
                 .toolbarColorScheme(.dark, for: .navigationBar)
         }
         .tint(AppTheme.accent)
         .task(id: retryCount) {
             await viewModel.load()
+        }
+        .sheet(
+            isPresented: $isSearchPresented,
+            onDismiss: {
+                searchViewModel.cancelSearch()
+            }
+        ) {
+            MovieSearchView(
+                viewModel: searchViewModel,
+                movieDetailsProvider: movieDetailsProvider
+            )
         }
     }
 
@@ -69,6 +87,15 @@ struct TrendingView: View {
             systemImage: "film",
             description: Text("Please check again later.")
         )
+    }
+    
+    private var searchButton: some View {
+        Button {
+            isSearchPresented = true
+        } label: {
+            Image(systemName: "magnifyingglass")
+        }
+        .accessibilityLabel("Search movies")
     }
     
     @ViewBuilder

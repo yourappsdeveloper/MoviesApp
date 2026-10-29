@@ -14,7 +14,8 @@ struct MovieSearchView: View {
 
     @State private var query = ""
     @State private var navigationPath: [Int] = []
-
+    @State private var isSearchActive = true
+    
     let viewModel: MovieSearchViewModel
     let movieDetailsProvider: any MovieDetailsProviding
 
@@ -25,6 +26,7 @@ struct MovieSearchView: View {
                 .navigationBarTitleDisplayMode(.inline)
                 .searchable(
                     text: $query,
+                    isPresented: $isSearchActive,
                     prompt: "Search movies"
                 )
                 .toolbar {
@@ -49,6 +51,11 @@ struct MovieSearchView: View {
         }
         .tint(AppTheme.accent)
         .onChange(of: query) { _, newValue in
+            // Keep results when the system closes the search interface.
+            guard !newValue.isEmpty || isSearchActive else {
+                return
+            }
+
             viewModel.updateQuery(newValue)
         }
     }

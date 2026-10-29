@@ -11,7 +11,9 @@ import MovieCore
 
 @main
 struct MoviesAppApp: App {
+    
     @State private var trendingViewModel: TrendingViewModel?
+    @State private var searchViewModel: MovieSearchViewModel?
     private let movieDetailsProvider: (any MovieDetailsProviding)?
     
     init() {
@@ -21,9 +23,11 @@ struct MoviesAppApp: App {
         if let token, !token.isEmpty {
             let client = TMDBClient(token: token)
             _trendingViewModel = State(initialValue: TrendingViewModel(moviesProvider: client))
+            _searchViewModel = State(initialValue: MovieSearchViewModel(moviesProvider: client))
             movieDetailsProvider = client
         } else {
             _trendingViewModel = State(initialValue: nil)
+            _searchViewModel = State(initialValue: nil)
             movieDetailsProvider = nil
         }
     }
@@ -31,10 +35,12 @@ struct MoviesAppApp: App {
     var body: some Scene {
         WindowGroup {
             if let trendingViewModel,
+               let searchViewModel,
                let movieDetailsProvider {
                 TrendingView(
                     viewModel: trendingViewModel,
-                    movieDetailsProvider: movieDetailsProvider
+                    movieDetailsProvider: movieDetailsProvider,
+                    searchViewModel: searchViewModel
                 )
             } else {
                 ContentUnavailableView("Configuration unavailable",
