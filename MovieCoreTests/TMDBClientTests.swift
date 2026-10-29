@@ -32,6 +32,38 @@ final class TMDBClientTests: XCTestCase {
         XCTAssertEqual(movie.overview, "A journey through space.")
         XCTAssertEqual(movie.posterPath, "/poster.jpg")
     }
+    
+    /// Checks that the client preserves pagination metadata.
+    func testFetchTrendingMoviesReturnsPageInformation() async throws {
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [SuccessURLProtocol.self]
+
+        let session = URLSession(configuration: configuration)
+        defer { session.invalidateAndCancel() }
+
+        let client = TMDBClient(token: "test-token", session: session)
+
+        let result = try await client.fetchTrendingMovies(page: 1)
+
+        XCTAssertEqual(result.page, 1)
+        XCTAssertEqual(result.totalPages, 1)
+        XCTAssertEqual(result.movies.count, 1)
+        XCTAssertEqual(result.movies.first?.id, 157336)
+    }
+
+    /// Rejects an invalid page before making a network request.
+    func testFetchTrendingMoviesRejectsPageZero() async {
+        let client = TMDBClient(token: "test-token")
+
+        do {
+            _ = try await client.fetchTrendingMovies(page: 0)
+            XCTFail("Expected an invalid page error.")
+        } catch TMDBError.invalidPage {
+            // Expected error.
+        } catch {
+            XCTFail("Unexpected error: \(error)")
+        }
+    }
 }
 
 /// Supplies a fixed response only to sessions that register this helper.

@@ -20,10 +20,29 @@ public struct TMDBClient: TrendingMoviesProviding {
         self.session = session
     }
 
+    /// Loads the first page for callers that only need the movie list.
     public func fetchTrendingMovies() async throws -> [Movie] {
-        guard let url = URL(
+        let result = try await fetchTrendingMovies(page: 1)
+        return result.movies
+    }
+
+    /// Loads a specific page and preserves its pagination information.
+    public func fetchTrendingMovies(page: Int) async throws -> MoviePage {
+        guard page > 0 else {
+            throw TMDBError.invalidPage
+        }
+
+        guard var components = URLComponents(
             string: "https://api.themoviedb.org/3/trending/movie/day"
         ) else {
+            throw TMDBError.invalidURL
+        }
+
+        components.queryItems = [
+            URLQueryItem(name: "page", value: String(page))
+        ]
+
+        guard let url = components.url else {
             throw TMDBError.invalidURL
         }
 
@@ -51,17 +70,21 @@ public struct TMDBClient: TrendingMoviesProviding {
 
         try Task.checkCancellation()
 
-        let page = try JSONDecoder().decode(
+        let result = try JSONDecoder().decode(
             PaginatedResponse<MovieDTO>.self,
             from: data
         )
 
-        return page.results.map { $0.toDomain() }
-    }
-}
+        return MoviePage(
+            page: result.page,
+            totalPages: result.totalPages,
+            movies: result.results.map { $0.toDomain() }
+        )
+    }}
 
 public enum TMDBError: Error {
     case invalidURL
+    case invalidPage
     case invalidResponse
     case httpStatus(Int)
 }
