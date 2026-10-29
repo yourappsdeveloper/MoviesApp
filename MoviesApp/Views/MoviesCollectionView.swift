@@ -12,11 +12,11 @@ import MovieCore
 
 /// Displays SwiftUI movie cards inside a UIKit collection view.
 struct MoviesCollectionView: UIViewRepresentable {
-    
+
     let movies: [Movie]
     let onNearEnd: @MainActor () async -> Void
     let onSelectMovie: @MainActor (Movie) -> Void
-    
+
     func makeCoordinator() -> Coordinator {
         Coordinator(
             onNearEnd: onNearEnd,
@@ -34,14 +34,14 @@ struct MoviesCollectionView: UIViewRepresentable {
         collectionView.alwaysBounceVertical = true
         collectionView.showsVerticalScrollIndicator = false
         collectionView.showsHorizontalScrollIndicator = false
-        
+
         collectionView.register(
             UICollectionViewCell.self,
             forCellWithReuseIdentifier: Coordinator.cellIdentifier
         )
         collectionView.dataSource = context.coordinator
         collectionView.delegate = context.coordinator
-        
+
         return collectionView
     }
 
@@ -52,7 +52,7 @@ struct MoviesCollectionView: UIViewRepresentable {
         let coordinator = context.coordinator
         coordinator.onNearEnd = onNearEnd
         coordinator.onSelectMovie = onSelectMovie
-        
+
         guard coordinator.movies != movies else {
             return
         }
@@ -139,7 +139,7 @@ struct MoviesCollectionView: UIViewRepresentable {
             return section
         }
     }
-    
+
     /// Cancels pagination when the collection view is removed.
     static func dismantleUIView(
         _ collectionView: UICollectionView,
@@ -161,7 +161,7 @@ struct MoviesCollectionView: UIViewRepresentable {
         var onNearEnd: @MainActor () async -> Void
         var paginationTask: Task<Void, Never>?
         var onSelectMovie: @MainActor (Movie) -> Void
-        
+
         init(
             onNearEnd: @escaping @MainActor () async -> Void,
             onSelectMovie: @escaping @MainActor (Movie) -> Void
@@ -170,7 +170,7 @@ struct MoviesCollectionView: UIViewRepresentable {
             self.onSelectMovie = onSelectMovie
             super.init()
         }
-        
+
         /// Returns the number of movies currently displayed.
         func collectionView(
             _ collectionView: UICollectionView,
@@ -198,7 +198,7 @@ struct MoviesCollectionView: UIViewRepresentable {
 
             return cell
         }
-        
+
         /// Starts loading before the user reaches the last few cards.
         func collectionView(
             _ collectionView: UICollectionView,
@@ -219,7 +219,7 @@ struct MoviesCollectionView: UIViewRepresentable {
                 paginationTask = nil
             }
         }
-        
+
         // Opens the movie selected by the user.
         func collectionView(
             _ collectionView: UICollectionView,

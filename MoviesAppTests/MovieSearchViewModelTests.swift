@@ -107,7 +107,7 @@ final class MovieSearchViewModelTests: XCTestCase {
             posterPath: "/poster.jpg"
         )
     }
-    
+
     // Keeps the latest results when an older request finishes afterward.
     func testOlderResponseDoesNotReplaceLatestResults() async {
         let firstRequestStarted = expectation(
@@ -182,7 +182,7 @@ final class MovieSearchViewModelTests: XCTestCase {
 
         XCTAssertEqual(finalResults, [latestMovie])
     }
-    
+
     // Searches only the latest query received during the throttle window.
     func testThrottlingSearchesLatestQuery() async {
         let requestStarted = expectation(
@@ -242,7 +242,7 @@ final class MovieSearchViewModelTests: XCTestCase {
         let queries = await provider.requestedQueries
         XCTAssertTrue(queries.isEmpty)
     }
-    
+
     // Ignores a response returned after the search task was cancelled.
     func testCancelledSearchDoesNotPublishResults() async {
         let requestStarted = expectation(

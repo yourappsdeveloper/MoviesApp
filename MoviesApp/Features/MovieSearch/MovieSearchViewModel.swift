@@ -13,7 +13,7 @@ import Observation
 @MainActor
 @Observable
 final class MovieSearchViewModel {
-    
+
     enum State {
         case idle
         case loading
@@ -28,11 +28,11 @@ final class MovieSearchViewModel {
     private var latestQuery = ""
     private var throttleTask: Task<Void, Never>?
     private var searchTask: Task<Void, Never>?
-    
+
     init(moviesProvider: any MovieSearchProviding) {
         self.moviesProvider = moviesProvider
     }
-    
+
     // Keeps the latest query and schedules one search per throttle window.
     func updateQuery(_ query: String) {
         let trimmedQuery = query.trimmingCharacters(
@@ -77,7 +77,7 @@ final class MovieSearchViewModel {
             self.startSearch()
         }
     }
-    
+
     // Starts a request using the latest query.
     private func startSearch() {
         let query = latestQuery
@@ -90,7 +90,7 @@ final class MovieSearchViewModel {
             await self.search(query: query)
         }
     }
-    
+
     // Retries the current query after a failed search.
     func retrySearch() {
         guard case .failed = state, !latestQuery.isEmpty else {
@@ -100,7 +100,7 @@ final class MovieSearchViewModel {
         state = .loading
         startSearch()
     }
-    
+
     // Cancels pending work and resets the search state.
     func cancelSearch() {
         currentRequestID = UUID()

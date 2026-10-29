@@ -24,7 +24,7 @@ final class MovieDetailsViewModel {
 
     private let movieID: Int
     private let moviesProvider: any MovieDetailsProviding
-    
+
     private static let releaseDateFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "en_US_POSIX")
@@ -34,7 +34,7 @@ final class MovieDetailsViewModel {
         formatter.isLenient = false
         return formatter
     }()
-    
+
     // Converts the loaded movie's release date into a date value.
     var releaseDate: Date? {
         guard case .loaded(let movie) = state,

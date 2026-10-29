@@ -76,7 +76,7 @@ final class MovieDetailsViewModelTests: XCTestCase {
             voteCount: 35000
         )
     }
-    
+
     // Parses the release date using the Gregorian calendar in GMT.
     func testReleaseDateParsesValidValue() async {
         let provider = MovieDetailsStub(

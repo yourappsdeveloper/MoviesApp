@@ -5,17 +5,15 @@
 //  Created by Alex  on 29.10.2026.
 //
 
-
 import MovieCore
 import SwiftUI
 
 struct MovieDetailsView: View {
-    
+
     @Environment(\.displayScale) private var displayScale
     @State private var retryCount = 0
     @State private var viewModel: MovieDetailsViewModel
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
-    
     init(
         movieID: Int,
         moviesProvider: any MovieDetailsProviding
@@ -27,7 +25,7 @@ struct MovieDetailsView: View {
             )
         )
     }
-    
+
     var body: some View {
         content
             .navigationTitle("Movie Details")
@@ -87,7 +85,7 @@ struct MovieDetailsView: View {
             .scrollIndicators(.hidden)
         }
     }
-    
+
     // Groups the title, rating, release date, and runtime.
     private func movieInfoView(_ movie: MovieDetails) -> some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -107,7 +105,7 @@ struct MovieDetailsView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
-    
+
     // Loads a poster at the resolution needed for its displayed size.
     private func posterView(
         _ movie: MovieDetails,
@@ -142,7 +140,7 @@ struct MovieDetailsView: View {
         }
         .font(.subheadline)
     }
-    
+
     private var releaseDateView: some View {
         Group {
             if let date = viewModel.releaseDate {
@@ -174,7 +172,7 @@ struct MovieDetailsView: View {
                 .font(.body)
         }
     }
-    
+
     // Places movie information beside the poster on wider screens.
     private func headerView(
         _ movie: MovieDetails,

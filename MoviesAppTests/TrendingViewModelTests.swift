@@ -54,7 +54,7 @@ final class TrendingViewModelTests: XCTestCase {
             "Unable to load movies. Please try again."
         )
     }
-    
+
     /// Checks that loading can succeed after an earlier request fails.
     func testLoadRetriesAfterFailure() async {
         let movie = Movie(
@@ -90,7 +90,7 @@ final class TrendingViewModelTests: XCTestCase {
         let requestCount = await provider.requestCount
         XCTAssertEqual(requestCount, 2)
     }
-    
+
     /// Checks that calling load again keeps the result without another request.
     func testLoadDoesNotRequestAgainAfterSuccess() async {
         let provider = TrendingMoviesStub(result: .success([]))
@@ -109,7 +109,7 @@ final class TrendingViewModelTests: XCTestCase {
 
         XCTAssertTrue(movies.isEmpty)
     }
-    
+
     /// Creates a movie with a predictable ID for pagination tests.
     private func makeMovie(id: Int) -> Movie {
         Movie(
@@ -119,7 +119,7 @@ final class TrendingViewModelTests: XCTestCase {
             posterPath: nil
         )
     }
-    
+
     /// Appends unique movies in order and stops after the last page.
     func testPaginationAppendsUniqueMoviesAndStopsAtLastPage() async {
         let firstMovie = makeMovie(id: 1)
@@ -153,7 +153,7 @@ final class TrendingViewModelTests: XCTestCase {
         let requestedPages = await provider.requestedPages
         XCTAssertEqual(requestedPages, [1, 2])
     }
-    
+
     /// Keeps existing movies after failure and retries the same page explicitly.
     func testPaginationPreservesMoviesAndRetriesFailedPage() async {
         let firstMovie = makeMovie(id: 1)
@@ -211,7 +211,7 @@ final class TrendingViewModelTests: XCTestCase {
             return
         }
     }
-    
+
     // Stops pagination when the API returns an empty page.
     func testLoadNextPageStopsAfterEmptyPage() async {
         let firstMovie = makeMovie(id: 1)

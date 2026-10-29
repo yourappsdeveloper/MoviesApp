@@ -15,7 +15,7 @@ struct MovieSearchView: View {
     @State private var query = ""
     @State private var navigationPath: [Int] = []
     @State private var isSearchActive = true
-    
+
     let viewModel: MovieSearchViewModel
     let movieDetailsProvider: any MovieDetailsProviding
 

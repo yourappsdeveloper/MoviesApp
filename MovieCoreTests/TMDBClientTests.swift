@@ -32,7 +32,7 @@ final class TMDBClientTests: XCTestCase {
         XCTAssertEqual(movie.overview, "A journey through space.")
         XCTAssertEqual(movie.posterPath, "/poster.jpg")
     }
-    
+
     /// Checks that the client preserves pagination metadata.
     func testFetchTrendingMoviesReturnsPageInformation() async throws {
         let configuration = URLSessionConfiguration.ephemeral

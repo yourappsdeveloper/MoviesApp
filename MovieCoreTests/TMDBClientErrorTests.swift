@@ -39,7 +39,7 @@ final class TMDBClientErrorTests: XCTestCase {
             XCTFail("Unexpected error: \(error)")
         }
     }
-    
+
     // Returns the HTTP status when the movie details server fails.
     func testMovieDetailsThrowsHTTPStatusForServerError() async {
         let configuration = URLSessionConfiguration.ephemeral
@@ -63,7 +63,7 @@ final class TMDBClientErrorTests: XCTestCase {
             XCTFail("Unexpected error: \(error)")
         }
     }
-    
+
     // Throws a decoding error when a successful response contains invalid JSON.
     func testTrendingThrowsDecodingErrorForInvalidJSON() async {
         let configuration = URLSessionConfiguration.ephemeral

@@ -59,7 +59,7 @@ final class MoviesAppUITests: XCTestCase {
 
         XCTAssertTrue(movieCard.waitForExistence(timeout: 5))
     }
-    
+
     // Finds a movie by title and opens its details from search results.
     @MainActor
     func testSearchMovieAndOpenDetails() {
@@ -144,7 +144,7 @@ final class MoviesAppUITests: XCTestCase {
             "Expected the selected movie title."
         )
     }
-    
+
     // Shows an empty state when no movies match the search.
     @MainActor
     func testSearchShowsEmptyStateForUnknownMovie() {

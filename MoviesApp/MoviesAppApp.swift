@@ -11,11 +11,11 @@ import MovieCore
 
 @main
 struct MoviesAppApp: App {
-    
+
     @State private var trendingViewModel: TrendingViewModel?
     @State private var searchViewModel: MovieSearchViewModel?
     private let movieDetailsProvider: (any MovieDetailsProviding)?
-    
+
     init() {
 #if DEBUG
 if ProcessInfo.processInfo.arguments.contains("-ui-testing") {
@@ -38,10 +38,10 @@ if ProcessInfo.processInfo.arguments.contains("-ui-testing") {
     return
 }
 #endif
-        
+
         let token = ProcessInfo.processInfo.environment["TMDB_READ_ACCESS_TOKEN"]?
             .trimmingCharacters(in: .whitespacesAndNewlines)
-        
+
         if let token, !token.isEmpty {
             let client = TMDBClient(token: token)
             _trendingViewModel = State(initialValue: TrendingViewModel(moviesProvider: client))
@@ -53,7 +53,7 @@ if ProcessInfo.processInfo.arguments.contains("-ui-testing") {
             movieDetailsProvider = nil
         }
     }
-    
+
     var body: some Scene {
         WindowGroup {
             if let trendingViewModel,

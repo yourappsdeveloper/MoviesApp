@@ -10,7 +10,7 @@ import SwiftUI
 import MovieCore
 
 struct TrendingView: View {
-    
+
     let viewModel: TrendingViewModel
     let movieDetailsProvider: any MovieDetailsProviding
     let searchViewModel: MovieSearchViewModel
@@ -18,7 +18,7 @@ struct TrendingView: View {
     @State private var isSearchPresented = false
     @State private var retryCount = 0
     @State private var navigationPath: [Int] = []
-    
+
     var body: some View {
         NavigationStack(path: $navigationPath) {
             content
@@ -88,7 +88,7 @@ struct TrendingView: View {
             description: Text("Please check again later.")
         )
     }
-    
+
     private var searchButton: some View {
         Button {
             isSearchPresented = true
@@ -97,7 +97,7 @@ struct TrendingView: View {
         }
         .accessibilityLabel("Search movies")
     }
-    
+
     @ViewBuilder
     private var paginationFooter: some View {
         switch viewModel.nextPageState {

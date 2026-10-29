@@ -11,7 +11,7 @@ import MovieCore
 
 /// Shows a movie poster, title, and short overview.
 struct MovieCardView: View {
-    
+
     @Environment(\.displayScale) private var displayScale
     let movie: Movie
 
@@ -55,7 +55,7 @@ struct MovieCardView: View {
         .frame(width: size.width, height: size.height)
         .clipped()
     }
-    
+
     private var details: some View {
         VStack(alignment: .leading, spacing: 6) {
             title

@@ -63,7 +63,7 @@ final class TMDBImageURLTests: XCTestCase {
 
         XCTAssertNil(url)
     }
-    
+
     // Accounts for display scale when selecting a backdrop size.
     func testBackdropSizeMatchesDisplayedWidthAndScale() {
         let url = TMDBImageURL.backdrop(
