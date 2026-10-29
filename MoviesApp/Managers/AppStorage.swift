@@ -24,6 +24,10 @@ enum AppStorage {
             .appendingPathComponent("MoviesApp")
     }()
 
+    static let imagePrefetcher = ImagePrefetcher { url in
+        try await PosterImageLoader.warm(url)
+    }
+
     static let imageLoader = ImageDataLoader(
         cache: DiskDataStore(directory: directory.appendingPathComponent("Images"))
     )

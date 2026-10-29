@@ -27,7 +27,7 @@ struct MoviesCollectionView: UIViewRepresentable {
     func makeUIView(context: Context) -> UICollectionView {
         let collectionView = UICollectionView(
             frame: .zero,
-            collectionViewLayout: Self.makeLayout()
+            collectionViewLayout: MovieGridLayout.make()
         )
 
         collectionView.backgroundColor = .systemBackground
@@ -41,6 +41,8 @@ struct MoviesCollectionView: UIViewRepresentable {
         )
         collectionView.dataSource = context.coordinator
         collectionView.delegate = context.coordinator
+        collectionView.prefetchDataSource = context.coordinator
+        collectionView.isPrefetchingEnabled = true
 
         return collectionView
     }
@@ -53,6 +55,7 @@ struct MoviesCollectionView: UIViewRepresentable {
         coordinator.favorites = favorites
         coordinator.onNearEnd = onNearEnd
         coordinator.onSelectMovie = onSelectMovie
+        coordinator.posterPrefetcher.updateLayout(in: collectionView)
 
         guard coordinator.movies != movies else {
             return
@@ -64,6 +67,7 @@ struct MoviesCollectionView: UIViewRepresentable {
             && coordinator.movies.elementsEqual(movies.prefix(oldCount))
 
         guard isAppending, oldCount > 0 else {
+            coordinator.posterPrefetcher.reset()
             coordinator.movies = movies
             collectionView.reloadData()
             return
@@ -81,72 +85,14 @@ struct MoviesCollectionView: UIViewRepresentable {
         }
     }
 
-    /// Adapts the column count to the available width and text size.
-    private static func makeLayout() -> UICollectionViewLayout {
-        UICollectionViewCompositionalLayout { _, environment in
-            let inset: CGFloat = 16
-            let spacing: CGFloat = 12
-
-            let availableWidth = max(
-                1,
-                environment.container.effectiveContentSize.width - inset * 2
-            )
-
-            let usesLargeText = environment.traitCollection
-                .preferredContentSizeCategory.isAccessibilityCategory
-
-            let columns = usesLargeText
-                ? 1
-                : max(1, Int((availableWidth + spacing) / (160 + spacing)))
-
-            let cardWidth = (
-                availableWidth - spacing * CGFloat(columns - 1)
-            ) / CGFloat(columns)
-
-            let textHeight = UIFontMetrics(forTextStyle: .subheadline)
-                .scaledValue(
-                    for: 150,
-                    compatibleWith: environment.traitCollection
-                )
-
-            let cardHeight = cardWidth * 1.5 + textHeight
-
-            let item = NSCollectionLayoutItem(
-                layoutSize: NSCollectionLayoutSize(
-                    widthDimension: .absolute(cardWidth),
-                    heightDimension: .estimated(cardHeight)
-                )
-            )
-
-            let group = NSCollectionLayoutGroup.horizontal(
-                layoutSize: NSCollectionLayoutSize(
-                    widthDimension: .fractionalWidth(1),
-                    heightDimension: .estimated(cardHeight)
-                ),
-                repeatingSubitem: item,
-                count: columns
-            )
-            group.interItemSpacing = .fixed(spacing)
-
-            let section = NSCollectionLayoutSection(group: group)
-            section.interGroupSpacing = spacing
-            section.contentInsets = NSDirectionalEdgeInsets(
-                top: inset,
-                leading: inset,
-                bottom: inset,
-                trailing: inset
-            )
-
-            return section
-        }
-    }
-
-    /// Cancels pagination when the collection view is removed.
+    /// Cancels pagination and prefetch work when the collection view is removed.
     static func dismantleUIView(
         _ collectionView: UICollectionView,
         coordinator: Coordinator
     ) {
         coordinator.paginationTask?.cancel()
+        coordinator.posterPrefetcher.reset()
+        collectionView.prefetchDataSource = nil
         collectionView.delegate = nil
         collectionView.dataSource = nil
     }
@@ -154,10 +100,12 @@ struct MoviesCollectionView: UIViewRepresentable {
     @MainActor
     final class Coordinator: NSObject,
                              UICollectionViewDataSource,
-                             UICollectionViewDelegate {
+                             UICollectionViewDelegate,
+                             UICollectionViewDataSourcePrefetching {
 
         static let cellIdentifier = "MovieCell"
 
+        let posterPrefetcher: MoviePosterPrefetcher
         var favorites: FavoritesViewModel?
         var movies: [Movie] = []
         var onNearEnd: @MainActor () async -> Void
@@ -166,8 +114,10 @@ struct MoviesCollectionView: UIViewRepresentable {
 
         init(
             onNearEnd: @escaping @MainActor () async -> Void,
-            onSelectMovie: @escaping @MainActor (Movie) -> Void
+            onSelectMovie: @escaping @MainActor (Movie) -> Void,
+            posterPrefetcher: MoviePosterPrefetcher = MoviePosterPrefetcher(prefetcher: AppStorage.imagePrefetcher)
         ) {
+            self.posterPrefetcher = posterPrefetcher
             self.onNearEnd = onNearEnd
             self.onSelectMovie = onSelectMovie
             super.init()
@@ -211,6 +161,7 @@ struct MoviesCollectionView: UIViewRepresentable {
             willDisplay cell: UICollectionViewCell,
             forItemAt indexPath: IndexPath
         ) {
+            posterPrefetcher.updateLayout(in: collectionView)
             guard indexPath.item >= max(0, movies.count - 6),
                   paginationTask == nil else {
                 return
@@ -224,6 +175,14 @@ struct MoviesCollectionView: UIViewRepresentable {
                 await onNearEnd()
                 paginationTask = nil
             }
+        }
+
+        func collectionView(_ collectionView: UICollectionView, prefetchItemsAt indexPaths: [IndexPath]) {
+            posterPrefetcher.prefetch(indexPaths, movies: movies, in: collectionView)
+        }
+
+        func collectionView(_ collectionView: UICollectionView, cancelPrefetchingForItemsAt indexPaths: [IndexPath]) {
+            posterPrefetcher.cancel(indexPaths)
         }
 
         // Opens the movie selected by the user.
