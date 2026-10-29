@@ -42,6 +42,10 @@ struct MoviesCollectionView: UIViewRepresentable {
         _ collectionView: UICollectionView,
         context: Context
     ) {
+        guard context.coordinator.movies != movies else {
+            return
+        }
+
         context.coordinator.movies = movies
         collectionView.reloadData()
     }
@@ -68,19 +72,25 @@ struct MoviesCollectionView: UIViewRepresentable {
                 availableWidth - spacing * CGFloat(columns - 1)
             ) / CGFloat(columns)
 
-            let estimatedHeight = cardWidth * 1.5 + 150
+            let textHeight = UIFontMetrics(forTextStyle: .subheadline)
+                .scaledValue(
+                    for: 150,
+                    compatibleWith: environment.traitCollection
+                )
+
+            let cardHeight = cardWidth * 1.5 + textHeight
 
             let item = NSCollectionLayoutItem(
                 layoutSize: NSCollectionLayoutSize(
                     widthDimension: .absolute(cardWidth),
-                    heightDimension: .estimated(estimatedHeight)
+                    heightDimension: .estimated(cardHeight)
                 )
             )
 
             let group = NSCollectionLayoutGroup.horizontal(
                 layoutSize: NSCollectionLayoutSize(
                     widthDimension: .fractionalWidth(1),
-                    heightDimension: .estimated(estimatedHeight)
+                    heightDimension: .estimated(cardHeight)
                 ),
                 repeatingSubitem: item,
                 count: columns

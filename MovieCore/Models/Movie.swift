@@ -6,7 +6,7 @@
 //
 
 
-public struct Movie: Identifiable, Sendable {
+public struct Movie: Identifiable, Sendable, Equatable {
     public let id: Int
     public let title: String
     public let overview: String

@@ -44,33 +44,17 @@ struct MovieCardView: View {
     }
 
     private func posterImage(size: CGSize) -> some View {
-        AsyncImage(
+        CachedPosterView(
             url: TMDBImageURL.poster(
                 path: movie.posterPath,
                 width: Double(size.width),
                 scale: Double(displayScale)
-            ),
-            scale: displayScale
-        ) { phase in
-            if let image = phase.image {
-                image
-                    .resizable()
-                    .scaledToFill()
-                    .frame(width: size.width, height: size.height)
-                    .clipped()
-            } else {
-                posterPlaceholder
-                    .frame(width: size.width, height: size.height)
-            }
-        }
+            )
+        )
+        .frame(width: size.width, height: size.height)
+        .clipped()
     }
-
-    private var posterPlaceholder: some View {
-        Image(systemName: "photo")
-            .font(.system(size: 32))
-            .foregroundStyle(.secondary)
-    }
-
+    
     private var details: some View {
         VStack(alignment: .leading, spacing: 6) {
             title
