@@ -5,6 +5,7 @@
 //  Created by Alex  on 29.10.2026.
 //
 
+import Foundation
 import SwiftUI
 import MovieCore
 
@@ -26,7 +27,11 @@ struct MovieCardView: View {
                 .strokeBorder(.black.opacity(0.08), lineWidth: 1)
         }
         .shadow(color: .black.opacity(0.06), radius: 3, y: 2)
-        .accessibilityElement(children: .combine)
+        .overlay(alignment: .topTrailing) {
+            FavoriteButton(movie: movie)
+                .padding(8)
+        }
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("movie-card-\(movie.id)")
     }
 
@@ -88,6 +93,9 @@ struct MovieCardView: View {
             posterPath: "/1E5baAaEse26fej7uHcjOgEE2t2.jpg"
         )
     )
+    .environment(FavoritesViewModel(repository: FavoritesRepository(
+        fileURL: FileManager.default.temporaryDirectory.appendingPathComponent("PreviewFavorites.json")
+    )))
     .frame(width: 180)
     .padding()
 }

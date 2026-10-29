@@ -30,6 +30,9 @@ struct MovieSearchView: View {
             .safeAreaInset(edge: .bottom, spacing: 0) {
                 searchBar
             }
+            .safeAreaInset(edge: .top, spacing: 0) {
+                SavedContentNotice(isVisible: viewModel.isShowingSavedData)
+            }
             .navigationTitle("Search")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

@@ -29,7 +29,23 @@ struct MovieDetailsView: View {
     }
 
     var body: some View {
-        content
+        ZStack { content }
+            .safeAreaInset(edge: .top, spacing: 0) {
+                SavedContentNotice(isVisible: viewModel.isShowingSavedData)
+            }
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    if case .loaded(let details) = viewModel.state {
+                        FavoriteButton(
+                            movie: Movie(
+                                id: details.id, title: details.title, overview: details.overview,
+                                posterPath: details.posterPath, mediaType: details.mediaType
+                            ),
+                            style: .toolbar
+                        )
+                    }
+                }
+            }
             .navigationTitle(
                 viewModel.mediaType == .movie
                     ? "Movie Details"
@@ -60,7 +76,7 @@ struct MovieDetailsView: View {
     }
 
     private var loadingView: some View {
-        ProgressView("Loading movie details…")
+        ProgressView("Loading details…")
             .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
@@ -111,21 +127,21 @@ struct MovieDetailsView: View {
                     systemImage: "clock"
                 )
                 .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color.primary.opacity(0.85))
             }
 
             if movie.mediaType == .series,
                let seasons = movie.numberOfSeasons {
                 Text("Seasons: \(seasons)")
                     .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.primary.opacity(0.85))
             }
 
             if movie.mediaType == .series,
                let episodes = movie.numberOfEpisodes {
                 Text("Episodes: \(episodes)")
                     .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.primary.opacity(0.85))
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -161,7 +177,7 @@ struct MovieDetailsView: View {
             .fontWeight(.semibold)
 
             Text("· \(movie.voteCount) votes")
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color.primary.opacity(0.85))
         }
         .font(.subheadline)
     }
@@ -182,7 +198,7 @@ struct MovieDetailsView: View {
                     Image(systemName: "calendar")
                 }
                 .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color.primary.opacity(0.85))
             }
         }
     }

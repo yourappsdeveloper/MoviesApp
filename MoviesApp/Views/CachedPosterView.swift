@@ -58,32 +58,13 @@ struct CachedPosterView: View {
 
     /// Downloads and prepares the poster only when it is not cached.
     private func load() async {
-        guard let url,
-              cache.image(for: url) == nil,
-              !Task.isCancelled else {
+        guard let url, !Task.isCancelled else {
             return
         }
 
         do {
-            let (data, response) = try await URLSession.shared.data(
-                from: url
-            )
-
-            guard let response = response as? HTTPURLResponse,
-                  (200..<300).contains(response.statusCode),
-                  let image = UIImage(data: data) else {
-                return
-            }
-
+            let preparedImage = try await PosterImageLoader.image(for: url)
             try Task.checkCancellation()
-
-            guard let preparedImage = await image.byPreparingForDisplay() else {
-                return
-            }
-
-            try Task.checkCancellation()
-
-            cache.insert(preparedImage, for: url)
 
             withAnimation(.easeInOut(duration: 0.25)) {
                 loadedPoster = (url: url, image: preparedImage)

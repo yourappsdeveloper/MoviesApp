@@ -20,6 +20,7 @@ final class MovieDetailsViewModel {
     }
 
     private(set) var state: State = .idle
+    private(set) var isShowingSavedData = false
 
     let mediaType: MediaType
 
@@ -69,6 +70,7 @@ final class MovieDetailsViewModel {
             return
         }
 
+        isShowingSavedData = false
         state = .loading
 
         do {
@@ -79,6 +81,7 @@ final class MovieDetailsViewModel {
 
             try Task.checkCancellation()
 
+            isShowingSavedData = movie.isFromCache
             state = .loaded(movie)
         } catch {
             if Task.isCancelled || error is CancellationError {

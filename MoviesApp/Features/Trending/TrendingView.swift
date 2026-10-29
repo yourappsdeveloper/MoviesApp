@@ -14,13 +14,17 @@ struct TrendingView: View {
     let movieDetailsProvider: any MovieDetailsProviding
     let searchViewModel: MovieSearchViewModel
 
+    @State private var isFavoritesPresented = false
     @State private var isSearchPresented = false
     @State private var retryCount = 0
     @State private var navigationPath: [Int] = []
 
     var body: some View {
         NavigationStack(path: $navigationPath) {
-            content
+            ZStack { content }
+                .safeAreaInset(edge: .top, spacing: 0) {
+                    SavedContentNotice(isVisible: viewModel.isShowingSavedData)
+                }
                 .navigationTitle("Trending")
                 .navigationDestination(for: Int.self) { movieID in
                     MovieDetailsView(
@@ -35,11 +39,20 @@ struct TrendingView: View {
                 )
                 .toolbar {
                     ToolbarItem(placement: .topBarTrailing) {
-                        searchButton
+                        HStack {
+                            Button { isFavoritesPresented = true } label: {
+                                Image(systemName: "heart")
+                            }
+                            .accessibilityLabel("Favorites")
+                            searchButton
+                        }
                     }
                 }
                 .toolbarBackground(.visible, for: .navigationBar)
                 .toolbarColorScheme(.dark, for: .navigationBar)
+        }
+        .sheet(isPresented: $isFavoritesPresented) {
+            FavoritesView(movieDetailsProvider: movieDetailsProvider)
         }
         .tint(AppTheme.accent)
         .task(id: retryCount) {
