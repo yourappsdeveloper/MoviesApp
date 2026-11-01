@@ -11,7 +11,7 @@ import SwiftUI
 struct MovieDetailsView: View {
 
     @Environment(\.displayScale) private var displayScale
-    @State private var retryCount = 0
+    @State private var retryTask: Task<Void, Never>?
     @State private var viewModel: MovieDetailsViewModel
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     init(
@@ -58,8 +58,12 @@ struct MovieDetailsView: View {
             )
             .toolbarBackground(.visible, for: .navigationBar)
             .toolbarColorScheme(.dark, for: .navigationBar)
-            .task(id: retryCount) {
+            .task {
                 await viewModel.load()
+            }
+            .onDisappear {
+                retryTask?.cancel()
+                retryTask = nil
             }
     }
 
@@ -274,7 +278,9 @@ struct MovieDetailsView: View {
                 .multilineTextAlignment(.center)
 
             Button("Try Again") {
-                retryCount += 1
+                retryTask = Task {
+                    await viewModel.load()
+                }
             }
             .buttonStyle(.borderedProminent)
         }

@@ -15,6 +15,8 @@ struct UITestMoviesProvider:
     MovieDetailsProviding,
     MovieSearchProviding {
 
+    private let detailsRecovery = DetailsRecoveryScenario()
+
     private let movie = Movie(
         id: 157336,
         title: "Interstellar",
@@ -71,6 +73,11 @@ struct UITestMoviesProvider:
         if ProcessInfo.processInfo.arguments.contains("-ui-testing-offline") {
             throw URLError(.notConnectedToInternet)
         }
+        if ProcessInfo.processInfo.arguments.contains("-ui-testing-details-recovery") {
+            if await detailsRecovery.shouldFail() {
+                throw URLError(.notConnectedToInternet)
+            }
+        }
 
         let item = mediaType == .movie ? movie : series
 
@@ -94,6 +101,17 @@ struct UITestMoviesProvider:
             numberOfSeasons: mediaType == .series ? 5 : nil,
             numberOfEpisodes: mediaType == .series ? 62 : nil
         )
+    }
+}
+
+// Simulates one offline details request followed by restored connectivity.
+private actor DetailsRecoveryScenario {
+    private var failuresRemaining = 1
+
+    func shouldFail() -> Bool {
+        guard failuresRemaining > 0 else { return false }
+        failuresRemaining -= 1
+        return true
     }
 }
 #endif
